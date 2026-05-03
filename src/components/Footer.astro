@@ -1,0 +1,11 @@
+---
+const startYear = 2010;
+const currentYear = new Date().getFullYear();
+const yearRange = startYear === currentYear ? `${startYear}` : `${startYear}-${currentYear}`;
+---
+<footer class="site-footer">
+  <p>
+    &copy; {yearRange} garaemon &middot;
+    <a href="/rss.xml">rss</a>
+  </p>
+</footer>

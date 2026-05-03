@@ -1,0 +1,25 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import PostList from '../components/PostList.astro';
+
+const HOME_POST_LIMIT = 10;
+const allPosts = await getCollection('posts', ({ data }) => !data.draft);
+const recentPosts = allPosts
+  .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime())
+  .slice(0, HOME_POST_LIMIT);
+---
+<Base>
+  <section>
+    <p>
+      A machine that consumes pop culture and outputs code.
+      Notes on Emacs, macOS, Go, and whatever else I'm hacking on.
+      See <a href="/about">about</a> for a longer intro.
+    </p>
+  </section>
+  <section>
+    <h2>Recent posts</h2>
+    <PostList posts={recentPosts} />
+    <p><a href="/posts">all posts &rarr;</a></p>
+  </section>
+</Base>

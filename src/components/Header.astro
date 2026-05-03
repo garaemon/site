@@ -1,0 +1,18 @@
+---
+const SITE_TITLE = 'garaemon';
+const navItems = [
+  { href: '/', label: 'home' },
+  { href: '/posts', label: 'posts' },
+  { href: '/tags', label: 'tags' },
+  { href: '/about', label: 'about' },
+  { href: '/rss.xml', label: 'rss' },
+];
+---
+<header class="site-header">
+  <a class="site-title" href="/">{SITE_TITLE}</a>
+  <nav>
+    {navItems.map((item) => (
+      <a href={item.href}>{item.label}</a>
+    ))}
+  </nav>
+</header>
