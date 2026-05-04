@@ -1,9 +1,9 @@
 ---
 import { formatDate } from '../utils/date';
-import type { CollectionEntry } from 'astro:content';
+import { type LocalizedPost, postUrl } from '../lib/posts';
 
 type Props = {
-  posts: CollectionEntry<'posts'>[];
+  posts: LocalizedPost[];
 };
 
 const { posts } = Astro.props;
@@ -11,8 +11,8 @@ const { posts } = Astro.props;
 <ul class="post-list">
   {posts.map((post) => (
     <li>
-      <time datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate)}</time>
-      <a href={`/posts/${post.slug}`}>{post.data.title}</a>
+      <time datetime={post.entry.data.pubDate.toISOString()}>{formatDate(post.entry.data.pubDate)}</time>
+      <a href={postUrl(post.slug, post.lang)}>{post.entry.data.title}</a>
     </li>
   ))}
 </ul>

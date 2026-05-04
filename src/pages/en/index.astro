@@ -1,25 +1,26 @@
 ---
-import Base from '../layouts/Base.astro';
-import PostList from '../components/PostList.astro';
+import Base from '../../layouts/Base.astro';
+import PostList from '../../components/PostList.astro';
 import {
   loadAllPosts,
   filterByLang,
   sortByPubDateDesc,
   homeUrl,
   postsIndexUrl,
-} from '../lib/posts';
+  aboutUrl,
+} from '../../lib/posts';
 
 const HOME_POST_LIMIT = 10;
-const LANG = 'ja';
+const LANG = 'en';
 const allPosts = await loadAllPosts();
 const recentPosts = sortByPubDateDesc(filterByLang(allPosts, LANG)).slice(0, HOME_POST_LIMIT);
 ---
-<Base lang={LANG} langSwitchHref={homeUrl('en')}>
+<Base lang={LANG} langSwitchHref={homeUrl('ja')}>
   <section>
     <p>
       A machine that consumes pop culture and outputs code.
       Notes on Emacs, macOS, Go, and whatever else I'm hacking on.
-      See <a href="/about">about</a> for a longer intro.
+      See <a href={aboutUrl(LANG)}>about</a> for a longer intro.
     </p>
   </section>
   <section>

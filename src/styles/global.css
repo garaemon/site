@@ -157,6 +157,34 @@ time {
   color: var(--accent-color);
 }
 
+.lang-switch {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  margin-left: 0.5rem;
+}
+
+.lang-switch-active {
+  font-weight: 700;
+  color: var(--accent-color);
+}
+
+.lang-switch-link {
+  color: var(--muted-color);
+  text-decoration: none;
+}
+
+.lang-switch-link:hover {
+  color: var(--accent-color);
+  text-decoration: underline;
+}
+
+.lang-switch-sep {
+  color: var(--muted-color);
+}
+
 .site-footer {
   padding: 25px 0;
   text-align: center;

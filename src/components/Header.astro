@@ -1,18 +1,44 @@
 ---
+import {
+  type Lang,
+  LANGS,
+  homeUrl,
+  postsIndexUrl,
+  tagsIndexUrl,
+  aboutUrl,
+  rssUrl,
+} from '../lib/posts';
+
+type Props = {
+  lang: Lang;
+  langSwitchHref: string;
+};
+
 const SITE_TITLE = 'garaemon';
+const { lang, langSwitchHref } = Astro.props;
 const navItems = [
-  { href: '/', label: 'home' },
-  { href: '/posts', label: 'posts' },
-  { href: '/tags', label: 'tags' },
-  { href: '/about', label: 'about' },
-  { href: '/rss.xml', label: 'rss' },
+  { href: homeUrl(lang), label: 'home' },
+  { href: postsIndexUrl(lang), label: 'posts' },
+  { href: tagsIndexUrl(lang), label: 'tags' },
+  { href: aboutUrl(lang), label: 'about' },
+  { href: rssUrl(lang), label: 'rss' },
 ];
 ---
 <header class="site-header">
-  <a class="site-title" href="/">{SITE_TITLE}</a>
+  <a class="site-title" href={homeUrl(lang)}>{SITE_TITLE}</a>
   <nav>
     {navItems.map((item) => (
       <a href={item.href}>{item.label}</a>
     ))}
+    <span class="lang-switch">
+      {LANGS.map((candidate, i) => (
+        <>
+          {i > 0 && <span class="lang-switch-sep">/</span>}
+          {candidate === lang
+            ? <span class="lang-switch-active">{candidate.toUpperCase()}</span>
+            : <a class="lang-switch-link" href={langSwitchHref}>{candidate.toUpperCase()}</a>}
+        </>
+      ))}
+    </span>
   </nav>
 </header>

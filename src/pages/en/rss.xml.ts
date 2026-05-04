@@ -5,20 +5,20 @@ import {
   filterByLang,
   sortByPubDateDesc,
   postUrl,
-} from '../lib/posts';
+} from '../../lib/posts';
 
 export async function GET(context: APIContext) {
   const all = await loadAllPosts();
-  const ja = sortByPubDateDesc(filterByLang(all, 'ja'));
+  const en = sortByPubDateDesc(filterByLang(all, 'en'));
   return rss({
-    title: 'garaemon',
+    title: 'garaemon (English)',
     description: 'A machine that consumes pop culture and outputs code.',
     site: context.site!,
-    items: ja.map((post) => ({
+    items: en.map((post) => ({
       title: post.entry.data.title,
       pubDate: post.entry.data.pubDate,
       description: post.entry.data.description,
-      link: postUrl(post.slug, 'ja'),
+      link: postUrl(post.slug, 'en'),
       categories: post.entry.data.tags,
     })),
   });

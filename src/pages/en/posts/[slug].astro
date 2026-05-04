@@ -1,5 +1,5 @@
 ---
-import Post from '../../layouts/Post.astro';
+import Post from '../../../layouts/Post.astro';
 import {
   loadAllPosts,
   filterByLang,
@@ -7,14 +7,14 @@ import {
   postUrl,
   homeUrl,
   type LocalizedPost,
-} from '../../lib/posts';
+} from '../../../lib/posts';
 
 export async function getStaticPaths() {
   const all = await loadAllPosts();
-  const jaPosts = filterByLang(all, 'ja');
-  return jaPosts.map((post) => {
-    const translation = findTranslation(all, post.slug, 'en');
-    const langSwitchHref = translation ? postUrl(post.slug, 'en') : homeUrl('en');
+  const enPosts = filterByLang(all, 'en');
+  return enPosts.map((post) => {
+    const translation = findTranslation(all, post.slug, 'ja');
+    const langSwitchHref = translation ? postUrl(post.slug, 'ja') : homeUrl('ja');
     return {
       params: { slug: post.slug },
       props: { post, langSwitchHref },
@@ -27,6 +27,6 @@ type Props = { post: LocalizedPost; langSwitchHref: string };
 const { post, langSwitchHref } = Astro.props as Props;
 const { Content } = await post.entry.render();
 ---
-<Post post={post.entry} lang="ja" langSwitchHref={langSwitchHref}>
+<Post post={post.entry} lang="en" langSwitchHref={langSwitchHref}>
   <Content />
 </Post>

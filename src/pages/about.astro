@@ -1,27 +1,14 @@
 ---
 import Base from '../layouts/Base.astro';
+import { loadPage, aboutUrl } from '../lib/posts';
+
+const LANG = 'ja';
+const page = await loadPage('about', LANG);
+const { Content } = await page.render();
 ---
-<Base title="about" description="About garaemon.">
+<Base title={page.data.title} description={page.data.description} lang={LANG} langSwitchHref={aboutUrl('en')}>
   <article class="post-body">
-    <h1>about</h1>
-    <p>
-      garaemon. Software engineer based in Tokyo. I write code, mostly in
-      Go, TypeScript, and Emacs Lisp, and I tinker with my Mac more than is
-      strictly healthy.
-    </p>
-    <h2>Now</h2>
-    <ul>
-      <li>Working on TODO.</li>
-      <li>Reading TODO.</li>
-    </ul>
-    <h2>Projects</h2>
-    <ul>
-      <li><a href="https://github.com/garaemon">GitHub</a> &mdash; everything that escapes the home folder.</li>
-    </ul>
-    <h2>Elsewhere</h2>
-    <ul>
-      <li><a href="https://github.com/garaemon">GitHub</a></li>
-      <li><a href="/rss.xml">RSS</a></li>
-    </ul>
+    <h1>{page.data.title}</h1>
+    <Content />
   </article>
 </Base>

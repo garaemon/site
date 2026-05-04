@@ -1,15 +1,15 @@
 ---
-import Base from '../../layouts/Base.astro';
-import PostList from '../../components/PostList.astro';
+import Base from '../../../layouts/Base.astro';
+import PostList from '../../../components/PostList.astro';
 import {
   loadAllPosts,
   filterByLang,
   sortByPubDateDesc,
   homeUrl,
   type LocalizedPost,
-} from '../../lib/posts';
+} from '../../../lib/posts';
 
-const LANG = 'ja';
+const LANG = 'en';
 const allPosts = await loadAllPosts();
 const sortedPosts = sortByPubDateDesc(filterByLang(allPosts, LANG));
 
@@ -23,7 +23,7 @@ for (const post of sortedPosts) {
 
 const years = [...postsByYear.keys()].sort((a, b) => b - a);
 ---
-<Base title="posts" lang={LANG} langSwitchHref={homeUrl('en')}>
+<Base title="posts" lang={LANG} langSwitchHref={homeUrl('ja')}>
   <h1>posts</h1>
   {years.map((year) => (
     <section>
