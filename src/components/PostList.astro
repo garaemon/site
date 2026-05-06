@@ -8,11 +8,11 @@ type Props = {
 
 const { posts } = Astro.props;
 ---
-<ul class="post-list">
+<ul class="list-none p-0 mt-0 mx-0 mb-4">
   {posts.map((post) => (
-    <li>
-      <time datetime={post.entry.data.pubDate.toISOString()}>{formatDate(post.entry.data.pubDate)}</time>
-      <a href={postUrl(post.slug, post.lang)}>{post.entry.data.title}</a>
+    <li class="flex items-baseline gap-4 py-1">
+      <time class="shrink-0 grow-0 basis-24" datetime={post.entry.data.pubDate.toISOString()}>{formatDate(post.entry.data.pubDate)}</time>
+      <a class="no-underline hover:underline" href={postUrl(post.slug, post.lang)}>{post.entry.data.title}</a>
     </li>
   ))}
 </ul>

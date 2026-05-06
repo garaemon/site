@@ -22,11 +22,11 @@ const sortedTags = [...tagCounts.entries()].sort((a, b) => {
   {sortedTags.length === 0 ? (
     <p>No tags yet.</p>
   ) : (
-    <ul class="tag-cloud">
+    <ul class="list-none p-0 flex flex-wrap gap-y-2 gap-x-4">
       {sortedTags.map(([tag, count]) => (
         <li>
-          <a href={tagUrl(tag, LANG)}>#{tag}</a>
-          <span class="tag-count">({count})</span>
+          <a class="no-underline text-muted hover:text-accent hover:underline" href={tagUrl(tag, LANG)}>#{tag}</a>
+          <span class="text-muted text-[0.85em] ml-1">({count})</span>
         </li>
       ))}
     </ul>

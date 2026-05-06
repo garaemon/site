@@ -7,7 +7,7 @@ const page = await loadPage('about', LANG);
 const { Content } = await page.render();
 ---
 <Base title={page.data.title} description={page.data.description} lang={LANG} langSwitchHref={aboutUrl('ja')}>
-  <article class="post-body">
+  <article class="[&_img]:block [&_img]:my-[1.2em] [&_img]:mx-auto">
     <h1>{page.data.title}</h1>
     <Content />
   </article>

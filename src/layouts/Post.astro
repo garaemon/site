@@ -14,9 +14,9 @@ const { title, description, pubDate, updatedDate, tags } = post.data;
 ---
 <Base title={title} description={description} lang={lang} langSwitchHref={langSwitchHref}>
   <article>
-    <header class="post-header">
-      <h1>{title}</h1>
-      <p class="post-meta">
+    <header>
+      <h1 class="mb-[0.25em]">{title}</h1>
+      <p class="text-muted text-[0.9em] mb-8">
         <time datetime={pubDate.toISOString()}>{formatDate(pubDate)}</time>
         {updatedDate && (
           <>
@@ -24,15 +24,15 @@ const { title, description, pubDate, updatedDate, tags } = post.data;
           </>
         )}
         {tags.length > 0 && (
-          <span class="post-tags">
+          <span class="ml-2">
             {tags.map((tag) => (
-              <a href={tagUrl(tag, lang)}>#{tag}</a>
+              <a class="text-muted no-underline mr-2 hover:text-accent hover:underline" href={tagUrl(tag, lang)}>#{tag}</a>
             ))}
           </span>
         )}
       </p>
     </header>
-    <div class="post-body">
+    <div class="[&_img]:block [&_img]:my-[1.2em] [&_img]:mx-auto">
       <slot />
     </div>
   </article>
