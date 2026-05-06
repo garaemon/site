@@ -16,7 +16,15 @@ const allPosts = await loadAllPosts();
 const recentPosts = sortByPubDateDesc(filterByLang(allPosts, LANG)).slice(0, HOME_POST_LIMIT);
 ---
 <Base lang={LANG} langSwitchHref={homeUrl('ja')}>
-  <section>
+  <section class="overflow-hidden">
+    <img
+      src="https://github.com/garaemon.png"
+      alt="garaemon"
+      width="96"
+      height="96"
+      loading="eager"
+      class="rounded-full w-24 h-24 float-left mr-4 mb-2"
+    />
     <p>
       A machine that consumes pop culture and outputs code.
       Notes on Emacs, macOS, Go, and whatever else I'm hacking on.
