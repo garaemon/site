@@ -74,7 +74,10 @@ function pickBody(sections: string[]): string {
       return match[1];
     }
   }
-  return sections[0] ?? '';
+  // No BODY section means this is e.g. a comments-only block; refuse to
+  // silently fall back to sections[0] (which would be a COMMENT body) and
+  // let the caller skip the entry instead.
+  return '';
 }
 
 function parseHatenaDate(input: string): Date {
@@ -86,8 +89,12 @@ function parseHatenaDate(input: string): Date {
   return new Date(`${yyyy}-${mm}-${dd}T${hh}:${mi}:${ss}+09:00`);
 }
 
-function decodeEntities(s: string): string {
-  return s
+// Hatena's MT export only emits this short list of named entities (plus the
+// numeric &#39; for the apostrophe). Numeric entities such as &#NNN; or
+// &#xHH; do not appear in the corpus we are importing, so we deliberately do
+// not try to decode them.
+function decodeEntities(html: string): string {
+  return html
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
@@ -123,27 +130,41 @@ function convertCodeBlocks(html: string): string {
 }
 
 function cleanupBody(html: string): string {
-  let out = html;
-  out = stripHatenaKeywordLinks(out);
-  out = convertHighlightedPre(out);
-  out = convertCodeBlocks(out);
-  return out.trim();
+  const stripped = stripHatenaKeywordLinks(html);
+  const highlighted = convertHighlightedPre(stripped);
+  const fenced = convertCodeBlocks(highlighted);
+  return fenced.trim();
 }
 
+// Pulls the first <p>…</p> as a description. If the entry leads with a code
+// block, figure, or other non-paragraph element, the description stays
+// undefined -- the schema makes it optional, so we deliberately do not fall
+// back to "first text-bearing block."
 function deriveDescription(body: string): string | undefined {
   const firstP = body.match(/<p>([\s\S]*?)<\/p>/);
   if (!firstP) {
     return undefined;
   }
-  const text = firstP[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  const stripped = firstP[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  // Decode entities so the description does not end up with literal "&amp;"
+  // (or similar) inside the YAML frontmatter.
+  const text = decodeEntities(stripped);
   if (!text) {
     return undefined;
   }
+  // The description is an approximation, not a structurally-significant
+  // string, so we slice on UTF-16 code units. A surrogate-pair split (e.g.
+  // half of an emoji at the boundary) is acceptable for the rare titles
+  // where it would happen.
   return text.length > 160 ? text.slice(0, 157) + '...' : text;
 }
 
-function yamlString(s: string): string {
-  return `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+function yamlString(value: string): string {
+  // Collapse newlines and tabs to single spaces so a stray line break in a
+  // title or category does not produce a multi-line YAML scalar that the
+  // simple regex-based readers in _shared.ts would mis-parse.
+  const flattened = value.replace(/[\r\n\t]+/g, ' ');
+  return `"${flattened.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 }
 
 function renderFrontmatter(data: {
@@ -167,21 +188,38 @@ function renderFrontmatter(data: {
   return lines.join('\n');
 }
 
-function buildEntryFile(entry: Entry): { path: string; content: string } | null {
+const SKIP_REASONS = ['unpublished', 'missing-fields', 'unsafe-basename', 'empty-body'] as const;
+type SkipReason = (typeof SKIP_REASONS)[number];
+
+// BASENAMEs in Hatena MT exports are typically date-based
+// (`YYYY/MM/DD/HHMMSS`), but custom BASENAMEs can technically contain any
+// character. Restrict to a filesystem- and URL-safe subset so a stray space
+// or non-ASCII character does not crash writeFileSync or land in a public URL.
+const SAFE_BASENAME_PATTERN = /^[A-Za-z0-9/_.-]+$/;
+
+function buildEntryFile(entry: Entry): { path: string; content: string } | { skip: SkipReason } {
   if (entry.header.STATUS !== 'Publish') {
-    return null;
+    return { skip: 'unpublished' };
   }
-  const basename = entry.header.BASENAME;
+  const entryBasename = entry.header.BASENAME;
   const dateStr = entry.header.DATE;
   const title = entry.header.TITLE;
-  if (!basename || !dateStr || !title) {
-    return null;
+  if (!entryBasename || !dateStr || !title) {
+    return { skip: 'missing-fields' };
+  }
+  if (!SAFE_BASENAME_PATTERN.test(entryBasename)) {
+    return { skip: 'unsafe-basename' };
+  }
+  // Check the cleaned-up body, not the raw one: keyword links and code-block
+  // markers can make a non-empty raw body collapse to an empty post.
+  const cleanedBody = cleanupBody(entry.body);
+  if (!cleanedBody) {
+    return { skip: 'empty-body' };
   }
   const date = parseHatenaDate(dateStr);
-  const slug = basename.replace(/\//g, '-');
-  const legacyUrl = `/entry/${basename}`;
-  const tags = (entry.header.CATEGORY ?? []).map((c) => c.trim()).filter(Boolean);
-  const cleanedBody = cleanupBody(entry.body);
+  const slug = entryBasename.replace(/\//g, '-');
+  const legacyUrl = `/entry/${entryBasename}`;
+  const tags = (entry.header.CATEGORY ?? []).map((category) => category.trim()).filter(Boolean);
   const description = deriveDescription(cleanedBody);
   const frontmatter = renderFrontmatter({
     title,
@@ -200,20 +238,59 @@ function main(): void {
   const text = readFileSync(EXPORT_FILE, 'utf8');
   const entries = parseExport(text);
   let written = 0;
-  let skipped = 0;
+  let overwritten = 0;
+  let skippedExisting = 0;
+  const skippedByReason = Object.fromEntries(
+    SKIP_REASONS.map((reason) => [reason, 0])
+  ) as Record<SkipReason, number>;
+  // Track every path we have written in this run so a duplicate BASENAME
+  // surfaces as a warning instead of silently overwriting the earlier entry.
+  const writtenPaths = new Set<string>();
   for (const entry of entries) {
-    const file = buildEntryFile(entry);
-    if (!file) {
-      skipped++;
+    const result = buildEntryFile(entry);
+    if ('skip' in result) {
+      skippedByReason[result.skip]++;
+      if (result.skip === 'missing-fields') {
+        // A missing BASENAME/DATE/TITLE almost always means a malformed
+        // export; surface it so the operator notices instead of silently
+        // dropping the entry.
+        console.warn(`skip: missing BASENAME/DATE/TITLE for entry titled "${entry.header.TITLE ?? '(untitled)'}"`);
+      }
+      if (result.skip === 'unsafe-basename') {
+        console.warn(`skip: unsafe BASENAME "${entry.header.BASENAME ?? ''}" for entry titled "${entry.header.TITLE ?? '(untitled)'}"`);
+      }
       continue;
     }
-    if (!existsSync(dirname(file.path))) {
-      mkdirSync(dirname(file.path), { recursive: true });
+    if (!existsSync(dirname(result.path))) {
+      mkdirSync(dirname(result.path), { recursive: true });
     }
-    writeFileSync(file.path, file.content);
+    // Re-running the importer overwrites previously imported posts. That is
+    // intentional for re-exports, but it would also clobber manual edits, so
+    // honour HATENA_IMPORT_SKIP_EXISTING when the operator wants to preserve
+    // local changes.
+    if (process.env.HATENA_IMPORT_SKIP_EXISTING === '1' && existsSync(result.path)) {
+      skippedExisting++;
+      continue;
+    }
+    if (writtenPaths.has(result.path)) {
+      console.warn(`duplicate output path within this run: ${result.path}`);
+    }
+    if (existsSync(result.path)) {
+      overwritten++;
+    }
+    writeFileSync(result.path, result.content);
+    writtenPaths.add(result.path);
     written++;
   }
-  console.log(`wrote ${written} entries, skipped ${skipped} of ${entries.length} total`);
+  const reasonsLog = SKIP_REASONS
+    .map((reason) => `${reason}=${skippedByReason[reason]}`)
+    .join(', ');
+  const skippedTotal = SKIP_REASONS.reduce((sum, reason) => sum + skippedByReason[reason], 0) + skippedExisting;
+  console.log(
+    `wrote ${written} entries (${overwritten} overwritten), ` +
+      `skipped ${skippedTotal} of ${entries.length} total ` +
+      `(${reasonsLog}, existing=${skippedExisting})`
+  );
 }
 
 main();

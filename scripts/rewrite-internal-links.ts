@@ -6,6 +6,7 @@
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { dirname, join, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { extractLegacyUrl, parseSlugFromFilename } from './_shared.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..');
@@ -13,25 +14,13 @@ const POSTS_DIR = join(ROOT, 'src/content/posts');
 
 type SlugMap = Map<string, string>;
 
-function parseSlugFromFilename(filename: string): { slug: string; lang: string } | null {
-  const match = filename.match(/^(.+)_([a-z]{2})\.md$/);
-  if (!match) {
-    return null;
-  }
-  return { slug: match[1], lang: match[2] };
-}
-
-function extractLegacyUrl(content: string): string | undefined {
-  const match = content.match(/^legacyUrl:\s*"?([^"\n]+)"?\s*$/m);
-  return match ? match[1].trim() : undefined;
-}
-
+// legacyUrl values produced by import-hatena.ts always look like
+// `/entry/YYYY/MM/DD/HHMMSS`. The map below keys off the
+// `YYYY/MM/DD/HHMMSS` portion so the regex pattern in rewriteContent can
+// look it up directly.
 function buildLegacyToSlugMap(): SlugMap {
   const map: SlugMap = new Map();
   for (const filename of readdirSync(POSTS_DIR)) {
-    if (!filename.endsWith('_ja.md')) {
-      continue;
-    }
     const parsed = parseSlugFromFilename(filename);
     if (!parsed || parsed.lang !== 'ja') {
       continue;
@@ -50,27 +39,36 @@ function buildLegacyToSlugMap(): SlugMap {
   return map;
 }
 
-function rewriteContent(content: string, slugMap: SlugMap): { updated: string; rewrites: number } {
-  let rewrites = 0;
-  let updated = content;
+function rewriteContent(content: string, slugMap: SlugMap): { updated: string; rewriteCount: number } {
+  let rewriteCount = 0;
 
-  const entryPattern = /https?:\/\/(?:blog\.garaemon\.com|garaemon\.hatenadiary\.(?:jp|com))\/entry\/([\d]{4}\/[\d]{2}\/[\d]{2}\/[\d]+)\/?/g;
-  updated = updated.replace(entryPattern, (match, entryPath: string) => {
+  // Run the entry pattern first: its prefix overlaps with the homepage
+  // pattern, so reversing the order would let the homepage replace eat
+  // /entry/... URLs before they have a chance to be remapped.
+  const entryPattern = /https?:\/\/(?:blog\.garaemon\.com|garaemon\.hatenadiary\.(?:jp|com))\/entry\/(\d{4}\/\d{2}\/\d{2}\/\d+)\/?/g;
+  const afterEntries = content.replace(entryPattern, (match, entryPath: string) => {
     const slug = slugMap.get(entryPath);
     if (!slug) {
       return match;
     }
-    rewrites++;
+    rewriteCount++;
     return `/posts/${slug}`;
   });
 
-  const homePattern = /https?:\/\/blog\.garaemon\.com\/?(?=["\s])/g;
-  updated = updated.replace(homePattern, () => {
-    rewrites++;
+  // Lookahead requires the URL to terminate with a quote, whitespace, or
+  // end-of-string, so longer URLs (e.g. /entry/...) that should already have
+  // been handled by the entry pattern above are not accidentally truncated,
+  // and homepage links at the very end of a file are still caught. The
+  // imported corpus is HTML-flavoured, so we do not need to terminate on
+  // markdown link `)` either; if a future re-run targets markdown sources,
+  // extend the lookahead.
+  const homePattern = /https?:\/\/blog\.garaemon\.com\/?(?=["\s]|$)/g;
+  const updated = afterEntries.replace(homePattern, () => {
+    rewriteCount++;
     return '/';
   });
 
-  return { updated, rewrites };
+  return { updated, rewriteCount };
 }
 
 function main(): void {
@@ -83,12 +81,12 @@ function main(): void {
     }
     const filePath = join(POSTS_DIR, filename);
     const original = readFileSync(filePath, 'utf8');
-    const { updated, rewrites } = rewriteContent(original, slugMap);
-    if (rewrites > 0 && updated !== original) {
+    const { updated, rewriteCount } = rewriteContent(original, slugMap);
+    if (rewriteCount > 0 && updated !== original) {
       writeFileSync(filePath, updated);
-      console.log(`${basename(filename)}: ${rewrites} link(s) rewritten`);
+      console.log(`${basename(filename)}: ${rewriteCount} link(s) rewritten`);
       touchedPosts++;
-      totalRewrites += rewrites;
+      totalRewrites += rewriteCount;
     }
   }
   console.log(`done: ${totalRewrites} links across ${touchedPosts} posts`);

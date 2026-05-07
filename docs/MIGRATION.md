@@ -128,7 +128,7 @@ const pages = defineCollection({
 });
 ```
 
-Filename convention: `<slug>_<lang>.md` (e.g., `hello_ja.md`, `hello_en.md`). The `parsePostId` helper splits on the trailing `_xx` segment, so slugs may themselves contain underscores.
+Posts use the filename convention `<slug>_<lang>.md` (e.g., `hello_ja.md`, `hello_en.md`); the `parsePostId` helper splits on the trailing `_xx` segment, so slugs may themselves contain underscores. Pages are English-only (single `<slug>.md`).
 
 ## Implementation Phases
 
@@ -181,7 +181,7 @@ Each phase is independently shippable; the site stays deployable throughout.
 ### 5. Image migration (`scripts/download-images.ts`) — Done
 
 - Walk all `_ja.md` / `_en.md` posts; regex-match Hatena CDN hosts (`cdn-ak.f.st-hatena.com`, `cdn.image.st-hatena.com`, `f.hatena.ne.jp`).
-- Download each image to `public/images/posts/<slug>/<basename>` (preserve filename; dedupe by hash on collision).
+- Download each image to `public/images/posts/<slug>/<basename>` (preserve filename; dedupe by basename — first download wins on collision, query-string variants collapse to the same file).
 - Rewrite Markdown `<img src>` references to `/images/posts/<slug>/<basename>`.
 - Idempotent: skip already-downloaded files.
 
@@ -197,14 +197,14 @@ Each phase is independently shippable; the site stays deployable throughout.
 
 ### 7. RSS, sitemap, tags — Done
 
-- Per-language RSS at `/rss.xml` and `/en/rss.xml`. Both linked from `<head rel="alternate">` (per-page based on current language).
+- A single `/rss.xml` feed for the JA-canonical posts. Linked from `<head rel="alternate">` on every page.
 - Sitemap: zero-config.
-- Tags: derived per-language at build time.
+- Tags: derived from the JA posts at build time.
 
 ### 8. Portfolio `/about` — Done
 
-- `src/content/pages/about_ja.md` + `about_en.md`.
-- Rendered via `src/pages/about.astro` and `src/pages/en/about.astro`.
+- `src/content/pages/about.md` (English only — the shell is English-only).
+- Rendered via `src/pages/about.astro`.
 
 ### 9. Theme polish — Pending
 
@@ -227,15 +227,14 @@ Each phase is independently shippable; the site stays deployable throughout.
 - `src/layouts/{Base,Post}.astro`
 - `src/components/{Header,Footer,PostList}.astro`
 - `src/lib/posts.ts`
-- `src/pages/{index,about}.astro`, `src/pages/posts/{index,[slug]}.astro`, `src/pages/tags/{index,[tag]}.astro`, `src/pages/rss.xml.ts`
-- `src/pages/en/...` (mirror tree)
+- `src/pages/{index,about}.astro`, `src/pages/posts/{index,[slug]}.astro`, `src/pages/posts/[slug]/en.astro`, `src/pages/tags/{index,[tag]}.astro`, `src/pages/rss.xml.ts`
 - `src/styles/global.css`
-- `scripts/{import-hatena,download-images,build-redirects}.ts`
+- `scripts/{import-hatena,download-images,rename-slugs,rewrite-internal-links,build-redirects}.ts`
 - `public/{_redirects,robots.txt,favicon.svg}`
 
 ## Verification
 
-1. `npm run dev` — every route renders: `/`, `/about`, `/posts`, `/posts/<slug>` (sample 3), `/tags`, `/tags/<tag>` (sample 2), `/rss.xml`, plus the `/en/*` mirror.
+1. `npm run dev` — every route renders: `/`, `/about`, `/posts`, `/posts/<slug>` (sample 3), `/posts/<slug>/en` for any post that has an EN translation, `/tags`, `/tags/<tag>` (sample 2), and `/rss.xml`.
 2. `npm run build && npm run preview` — clean build, no warnings.
 3. RSS validates at <https://validator.w3.org/feed/>.
 4. Spot-check 5 migrated posts: title, date, tags, body, images, internal links.

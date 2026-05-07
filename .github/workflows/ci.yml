@@ -5,6 +5,12 @@ on:
     branches: [main]
   pull_request:
 
+# Cancel in-flight runs when a new commit lands on the same ref so two rapid
+# pushes to the same PR do not waste runner minutes racing each other.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   ci:
     runs-on: ubuntu-latest

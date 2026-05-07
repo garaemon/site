@@ -4,6 +4,7 @@
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { extractLegacyUrl, parseSlugFromFilename } from './_shared.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..');
@@ -12,27 +13,13 @@ const REDIRECTS_FILE = join(ROOT, 'public/_redirects');
 
 type RedirectRule = { from: string; to: string };
 
-function parseSlugFromFilename(filename: string): { slug: string; lang: string } {
-  const match = filename.match(/^(.+)_([a-z]{2})\.md$/);
-  if (!match) {
-    throw new Error(`unexpected post filename: ${filename}`);
-  }
-  return { slug: match[1], lang: match[2] };
-}
-
-function extractLegacyUrl(content: string): string | undefined {
-  const match = content.match(/^legacyUrl:\s*"?([^"\n]+)"?\s*$/m);
-  return match ? match[1].trim() : undefined;
-}
-
 function buildRules(): RedirectRule[] {
   const rules: RedirectRule[] = [];
   for (const filename of readdirSync(POSTS_DIR)) {
-    if (!filename.endsWith('.md')) {
-      continue;
-    }
-    const { slug, lang } = parseSlugFromFilename(filename);
-    if (lang !== 'ja') {
+    const parsed = parseSlugFromFilename(filename);
+    // Only Japanese posts carry legacyUrl, so non-JA files contribute nothing
+    // to the redirect map.
+    if (!parsed || parsed.lang !== 'ja') {
       continue;
     }
     const content = readFileSync(join(POSTS_DIR, filename), 'utf8');
@@ -40,7 +27,7 @@ function buildRules(): RedirectRule[] {
     if (!legacy) {
       continue;
     }
-    rules.push({ from: legacy, to: `/posts/${slug}` });
+    rules.push({ from: legacy, to: `/posts/${parsed.slug}` });
   }
   rules.sort((a, b) => a.from.localeCompare(b.from));
   return rules;

@@ -43,6 +43,11 @@ blocks (with `<span class="syn*">` highlights) into fenced Markdown
 code blocks, and decodes HTML entities. Other inline HTML is preserved
 since Markdown allows it.
 
+Re-running the importer overwrites previously imported posts by design,
+so any manual copy edits are clobbered. Set `HATENA_IMPORT_SKIP_EXISTING=1`
+to preserve existing files. The summary line reports `overwritten=` and
+`existing=` separately so you can tell which entries were touched.
+
 ### `download-images.ts`
 
 Walks every `_ja.md` / `_en.md` post, regex-matches Hatena CDN hosts
@@ -66,11 +71,19 @@ script is the entire redirect pipeline.
 ### `rename-slugs.ts`
 
 Imported posts start with date-based slugs (`2025-11-17-051856`).
-This script proposes readable slugs derived from the title (or the
-first H1 in the body), renames the post file and its image directory,
-and preserves `legacyUrl` so the 301 still maps to the new path. It
-will not overwrite an existing readable slug or any slug that already
-collides.
+This script derives a new slug from each post's `title` frontmatter
+(ASCII tokens only), renames the post file and its image directory,
+and updates `/images/posts/<slug>/` references inside the body so the
+images keep resolving. The `legacyUrl` value is left untouched, so
+`build-redirects.ts` keeps mapping the original Hatena URL to the new
+path.
+
+Slug derivation is driven by the JA file; the EN file (if any) is
+renamed to match. Titles with no ASCII tokens fall back to the
+existing date-based slug. Slugs that collide are disambiguated with a
+`-2`, `-3`, ... suffix. EN-only posts (no JA counterpart) are not
+included in the rename plan and keep their date-based slug; this is
+intentional today because the corpus has no such posts.
 
 ### `rewrite-internal-links.ts`
 

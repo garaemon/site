@@ -1,3 +1,4 @@
+// /rss.xml — the single Atom-style feed for the site, fed by the JA-canonical posts.
 import rss from '@astrojs/rss';
 import type { APIContext } from 'astro';
 import { loadAllPosts, sortByPubDateDesc, postUrl } from '../lib/posts';

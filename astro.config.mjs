@@ -1,3 +1,5 @@
+// Astro build config: static output, no trailing slashes, sitemap integration,
+// Tailwind via Vite, and Shiki configured for the github-light theme.
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
