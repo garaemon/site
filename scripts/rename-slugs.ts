@@ -1,4 +1,8 @@
 #!/usr/bin/env -S node --experimental-strip-types
+// Renames imported post files (and their public/images/posts/<slug>/ dirs)
+// from the legacy Hatena BASENAME-derived slug to a human-friendly slug
+// derived from the post title. Collisions are disambiguated with a numeric
+// suffix, and image references inside the markdown are updated in place.
 import { readFileSync, writeFileSync, readdirSync, renameSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';

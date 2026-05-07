@@ -1,4 +1,8 @@
 #!/usr/bin/env -S node --experimental-strip-types
+// Rewrites legacy intra-blog links inside post bodies: absolute URLs that
+// point at blog.garaemon.com or garaemon.hatenadiary.{jp,com}/entry/... are
+// remapped to local /posts/<slug> paths using each post's legacyUrl, and the
+// bare blog homepage is rewritten to /.
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { dirname, join, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';

@@ -1,4 +1,6 @@
 #!/usr/bin/env -S node --experimental-strip-types
+// Generates public/_redirects from each post's legacyUrl frontmatter so that
+// the original Hatena Blog paths return 301 redirects to /posts/<slug>.
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';

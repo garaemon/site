@@ -1,4 +1,8 @@
 #!/usr/bin/env -S node --experimental-strip-types
+// Scans every post in src/content/posts for remote Hatena image URLs,
+// downloads each image into public/images/posts/<slug>/, and rewrites the
+// markdown to reference the locally hosted copy. Idempotent: already-fetched
+// files are skipped.
 import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from 'node:fs';
 import { dirname, join, basename, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';

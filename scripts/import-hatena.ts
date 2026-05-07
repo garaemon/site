@@ -1,4 +1,8 @@
 #!/usr/bin/env -S node --experimental-strip-types
+// Parses the Hatena Blog Movable-Type export (blog.garaemon.com.export.txt)
+// and writes one Astro content file per published entry into
+// src/content/posts/<slug>_ja.md, including frontmatter (title, pubDate,
+// description, tags, legacyUrl) and a lightly cleaned-up HTML body.
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
