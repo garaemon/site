@@ -1,7 +1,8 @@
-// Flat-config ESLint entrypoint. Two configurations are exported: one for
-// plain JS/TS files (typescript-eslint parser) and one extending the
-// recommended Astro config. The styleRules block is the project-wide
-// formatting contract; do not relax without sweeping existing code.
+// Flat-config ESLint entrypoint. Layers the typescript-eslint recommended
+// rules (no-unused-vars, no-explicit-any, etc.) and eslint-plugin-astro's
+// recommended config under a project-wide styleRules block. Relaxing any
+// of these rules should be done with a sweep across existing code, since
+// commit history shows they were introduced after the initial migration.
 import tseslint from 'typescript-eslint';
 import astro from 'eslint-plugin-astro';
 
@@ -18,8 +19,12 @@ export default [
   {
     ignores: ['dist/**', 'node_modules/**', '.astro/**'],
   },
+  ...tseslint.configs.recommended.map((config) => ({
+    ...config,
+    files: ['**/*.{ts,tsx,mts,cts}'],
+  })),
   {
-    files: ['**/*.{js,mjs,ts,tsx}'],
+    files: ['**/*.{js,mjs,ts,tsx,mts,cts}'],
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {

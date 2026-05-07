@@ -19,6 +19,9 @@ type Props = {
   langSwitchHref: string;
 };
 
+if (!Astro.site) {
+  throw new Error('astro.config.mjs must set `site` so canonical and alternate URLs resolve.');
+}
 const { title, description, lang, langSwitchHref } = Astro.props;
 const pageTitle = title ? `${title} - ${SITE_NAME}` : SITE_NAME;
 const metaDescription = description ?? DEFAULT_DESCRIPTION_BY_LANG[lang];

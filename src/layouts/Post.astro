@@ -32,8 +32,6 @@ const { title, description, pubDate, updatedDate, tags } = post.data;
         )}
       </p>
     </header>
-    <div class="[&_img]:block [&_img]:my-[1.2em] [&_img]:mx-auto">
-      <slot />
-    </div>
+    <slot />
   </article>
 </Base>
