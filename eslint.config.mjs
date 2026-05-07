@@ -4,6 +4,7 @@ import astro from 'eslint-plugin-astro';
 const styleRules = {
   curly: ['error', 'all'],
   'brace-style': ['error', '1tbs', { allowSingleLine: false }],
+  indent: ['error', 2, { SwitchCase: 1 }],
 };
 
 export default [
