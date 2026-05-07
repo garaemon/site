@@ -11,26 +11,27 @@
 
 Migration is implemented top-down: shell first, then content import, then redirects/RSS/polish.
 
-## Status (2026-05-05)
+## Status (2026-05-06)
 
 | Phase | Status |
 |---|---|
 | 1. Bootstrap | Done |
 | 2. Shell + theme | Done |
 | 3. Bilingual support | Done |
-| 4. Hatena export → Markdown | Done (68 JA posts imported) |
-| 5. Image migration | Done |
-| 6. Redirects | Done (68 entries in `public/_redirects`) |
-| 7. RSS, sitemap, tags | Done |
+| 4. Hatena export → Markdown | Pending (lands in the migration-scripts PR) |
+| 5. Image migration | Pending (lands in the migration-scripts PR) |
+| 6. Redirects | Pending (lands in the content PR) |
+| 7. RSS, sitemap, tags | Done (RSS + sitemap; tag pages exist on the seed data) |
 | 8. Portfolio `/about` | Done (JA + EN) |
 | 9. Theme polish | Pending |
 | 10. Deploy | Pending |
 
 Notes:
 
-- All migrated posts are currently JA-only. The bilingual scaffolding is in place; per-post EN translations can be added incrementally.
+- Work is split across three stacked PRs to keep diffs reviewable: this **foundation** PR ships the Astro shell, bilingual routing, Tailwind theme, `/about`, and CI; a follow-up **migration-scripts** PR adds `scripts/import-hatena.ts` and friends; a final **content** PR imports the 68 JA posts, their images, and `public/_redirects`, and deletes the seed fixtures.
+- All migrated posts will be JA-only at first. The bilingual scaffolding is in place; per-post EN translations can be added incrementally.
 - Two extra utility scripts emerged during migration and are now part of the toolchain: `scripts/rename-slugs.ts` (rename date-based slugs to readable ones while preserving `legacyUrl`) and `scripts/rewrite-internal-links.ts` (rewrite intra-blog links from old Hatena paths to new `/posts/<slug>` paths).
-- Seed fixture posts (`hello_*`, `image-sample_ja`, `typography-and-code_ja`, `english-only-fixture_en`) were deleted once real content landed.
+- Seed fixture posts (`hello_*`, `image-sample_ja`, `typography-and-code_ja`, `english-only-fixture_en`) live alongside the shell so every route renders. They are removed in the content PR once real content lands.
 
 ## Locked Decisions
 
@@ -157,7 +158,7 @@ Each phase is independently shippable; the site stays deployable throughout.
 - Mirror routes under `/en/*`. Add per-language RSS.
 - Add a JA/EN switcher in the header with the active language bolded. Per-content pages (`/about`, individual posts) link the inactive label to the matching translation when one exists; aggregate listings fall back to the other language's home.
 
-### 4. Hatena export → Markdown (`scripts/import-hatena.ts`) — Done
+### 4. Hatena export → Markdown (`scripts/import-hatena.ts`) — Pending (migration-scripts PR)
 
 - Source: Hatena Blog 設定 → 詳細設定 → エクスポート (MT format `.txt`, kept locally outside git).
 - Parser reads MT records (`TITLE`, `BASENAME`, `DATE`, `CATEGORY`, `STATUS`, `BODY`).
@@ -174,14 +175,14 @@ Each phase is independently shippable; the site stays deployable throughout.
   - Otherwise preserve HTML; Markdown allows inline HTML so `<figure>`, `<iframe>`, etc. render.
 - Run as `node --experimental-strip-types scripts/import-hatena.ts`.
 
-### 5. Image migration (`scripts/download-images.ts`) — Done
+### 5. Image migration (`scripts/download-images.ts`) — Pending (migration-scripts PR)
 
 - Walk all `_ja.md` / `_en.md` posts; regex-match Hatena CDN hosts (`cdn-ak.f.st-hatena.com`, `cdn.image.st-hatena.com`, `f.hatena.ne.jp`).
 - Download each image to `public/images/posts/<slug>/<basename>` (preserve filename; dedupe by hash on collision).
 - Rewrite Markdown `<img src>` references to `/images/posts/<slug>/<basename>`.
 - Idempotent: skip already-downloaded files.
 
-### 6. Redirects (`scripts/build-redirects.ts`) — Done
+### 6. Redirects (`scripts/build-redirects.ts`) — Pending (content PR)
 
 - Scan all posts' `legacyUrl` and emit `public/_redirects`:
 
