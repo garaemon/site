@@ -31,5 +31,8 @@ jobs:
       - name: Build
         run: npm run build
 
+      # npm audit is informational: a new upstream advisory should warn,
+      # not turn main red retroactively. Surface results without failing CI.
       - name: npm audit
         run: npm audit --audit-level=high
+        continue-on-error: true
