@@ -27,6 +27,11 @@ export type LocalizedPost = {
  */
 export function parsePostId(id: string): { slug: string; lang: Lang } {
   const withoutExt = id.replace(/\.[^.]+$/, '');
+  // Two-step validation: the regex enforces the `_xx` shape and lets the
+  // greedy `(.+)` capture slugs that themselves contain underscores; isLang
+  // then narrows the two-letter suffix to the supported set. Splitting the
+  // checks gives separate, more useful error messages than a single regex
+  // built from LANGS would.
   const match = withoutExt.match(/^(.+)_([a-z]{2})$/);
   if (!match) {
     throw new Error(`unexpected post id: ${id} (expected <slug>_<lang>.md)`);

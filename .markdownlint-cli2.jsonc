@@ -1,3 +1,15 @@
+// markdownlint-cli2 config. Defaults are kept on, except:
+//   - MD013 (line length): off — Japanese paragraphs and imported posts
+//     do not respect a fixed wrap.
+//   - MD024 (duplicate headings): siblings-only — same heading text may
+//     reappear under different sections.
+//   - MD033 (inline HTML): off — Hatena-imported posts use <figure>,
+//     <iframe>, etc.
+//   - MD041 (first-line H1): off — frontmatter-only files have no H1.
+//   - MD060 (table column style): off — both compact and padded styles
+//     are valid; let authors pick.
+// src/content/** is excluded so authored posts do not need to satisfy
+// the docs-style ruleset.
 {
   "config": {
     "default": true,
