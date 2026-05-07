@@ -6,6 +6,7 @@ import {
   sortByPubDateDesc,
   postUrl,
 } from '../lib/posts';
+import { RSS_TITLE_BY_LANG, DEFAULT_DESCRIPTION_BY_LANG } from '../lib/site';
 
 export async function GET(context: APIContext) {
   if (!context.site) {
@@ -14,8 +15,8 @@ export async function GET(context: APIContext) {
   const allPosts = await loadAllPosts();
   const jaPosts = sortByPubDateDesc(filterByLang(allPosts, 'ja'));
   return rss({
-    title: 'garaemon',
-    description: 'A machine that consumes pop culture and outputs code.',
+    title: RSS_TITLE_BY_LANG.ja,
+    description: DEFAULT_DESCRIPTION_BY_LANG.ja,
     site: context.site,
     items: jaPosts.map((post) => ({
       title: post.entry.data.title,

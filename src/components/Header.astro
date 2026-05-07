@@ -1,4 +1,8 @@
 ---
+// Site header: title link, primary nav, and JA/EN language switcher.
+// Pages render this through Base.astro and pass the current `lang` plus a
+// `langSwitchHref` (the URL the inactive language label should point to —
+// usually a translation, occasionally the other-language home).
 import {
   type Lang,
   LANGS,
@@ -8,13 +12,13 @@ import {
   aboutUrl,
   rssUrl,
 } from '../lib/posts';
+import { SITE_NAME } from '../lib/site';
 
 type Props = {
   lang: Lang;
   langSwitchHref: string;
 };
 
-const SITE_TITLE = 'garaemon';
 const { lang, langSwitchHref } = Astro.props;
 const navItems = [
   { href: homeUrl(lang), label: 'home' },
@@ -25,15 +29,15 @@ const navItems = [
 ];
 ---
 <header class="flex flex-row flex-wrap justify-between items-baseline gap-4 pb-2">
-  <a class="font-bold text-[1.25em] no-underline text-heading" href={homeUrl(lang)}>{SITE_TITLE}</a>
+  <a class="font-bold text-[1.25em] no-underline text-heading" href={homeUrl(lang)}>{SITE_NAME}</a>
   <nav class="flex flex-row flex-wrap gap-4">
     {navItems.map((item) => (
       <a class="no-underline text-muted hover:underline hover:text-accent" href={item.href}>{item.label}</a>
     ))}
     <span class="inline-flex items-baseline gap-1 font-mono text-[0.85em] ml-2">
-      {LANGS.map((candidate, i) => (
+      {LANGS.map((candidate, index) => (
         <>
-          {i > 0 && <span class="text-muted">/</span>}
+          {index > 0 && <span class="text-muted">/</span>}
           {candidate === lang
             ? <span class="font-bold text-accent">{candidate.toUpperCase()}</span>
             : <a class="text-muted no-underline hover:text-accent hover:underline" href={langSwitchHref}>{candidate.toUpperCase()}</a>}
