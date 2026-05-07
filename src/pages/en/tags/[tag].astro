@@ -5,23 +5,18 @@ import {
   loadAllPosts,
   filterByLang,
   sortByPubDateDesc,
+  collectTags,
   tagsIndexUrl,
   homeUrl,
   type LocalizedPost,
 } from '../../../lib/posts';
 
 export async function getStaticPaths() {
-  const all = await loadAllPosts();
-  const en = filterByLang(all, 'en');
-  const tagSet = new Set<string>();
-  for (const post of en) {
-    for (const tag of post.entry.data.tags) {
-      tagSet.add(tag);
-    }
-  }
-  return [...tagSet].map((tag) => {
+  const allPosts = await loadAllPosts();
+  const enPosts = filterByLang(allPosts, 'en');
+  return [...collectTags(enPosts).keys()].map((tag) => {
     const taggedPosts = sortByPubDateDesc(
-      en.filter((post) => post.entry.data.tags.includes(tag))
+      enPosts.filter((post) => post.entry.data.tags.includes(tag))
     );
     return {
       params: { tag },

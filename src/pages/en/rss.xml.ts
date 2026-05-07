@@ -8,13 +8,16 @@ import {
 } from '../../lib/posts';
 
 export async function GET(context: APIContext) {
-  const all = await loadAllPosts();
-  const en = sortByPubDateDesc(filterByLang(all, 'en'));
+  if (!context.site) {
+    throw new Error('astro.config.mjs must set `site` to build the RSS feed.');
+  }
+  const allPosts = await loadAllPosts();
+  const enPosts = sortByPubDateDesc(filterByLang(allPosts, 'en'));
   return rss({
     title: 'garaemon (English)',
     description: 'A machine that consumes pop culture and outputs code.',
-    site: context.site!,
-    items: en.map((post) => ({
+    site: context.site,
+    items: enPosts.map((post) => ({
       title: post.entry.data.title,
       pubDate: post.entry.data.pubDate,
       description: post.entry.data.description,
