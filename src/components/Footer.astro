@@ -1,4 +1,12 @@
 ---
+import { type Lang, rssUrl } from '../lib/posts';
+
+type Props = {
+  lang: Lang;
+};
+
+const { lang } = Astro.props;
+// 2010 is the year the original blog.garaemon.com began on Hatena.
 const startYear = 2010;
 const currentYear = new Date().getFullYear();
 const yearRange = startYear === currentYear ? `${startYear}` : `${startYear}-${currentYear}`;
@@ -6,6 +14,6 @@ const yearRange = startYear === currentYear ? `${startYear}` : `${startYear}-${c
 <footer class="py-[25px] text-center text-muted text-[0.9em]">
   <p>
     &copy; {yearRange} garaemon &middot;
-    <a href="/rss.xml">rss</a>
+    <a href={rssUrl(lang)}>rss</a>
   </p>
 </footer>
