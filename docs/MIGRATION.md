@@ -27,6 +27,7 @@ Migration is implemented top-down: shell first, then content import, then redire
 | 10. Deploy | Pending |
 
 Notes:
+
 - All migrated posts are currently JA-only. The bilingual scaffolding is in place; per-post EN translations can be added incrementally.
 - Two extra utility scripts emerged during migration and are now part of the toolchain: `scripts/rename-slugs.ts` (rename date-based slugs to readable ones while preserving `legacyUrl`) and `scripts/rewrite-internal-links.ts` (rewrite intra-blog links from old Hatena paths to new `/posts/<slug>` paths).
 - Seed fixture posts (`hello_*`, `image-sample_ja`, `typography-and-code_ja`, `english-only-fixture_en`) were deleted once real content landed.
@@ -56,7 +57,7 @@ Out of scope for v1: dark mode, on-site search, comments, syntax-theme switching
 
 ## Repository Layout
 
-```
+```text
 site/
 ├── astro.config.mjs
 ├── package.json
@@ -183,9 +184,11 @@ Each phase is independently shippable; the site stays deployable throughout.
 ### 6. Redirects (`scripts/build-redirects.ts`) — Done
 
 - Scan all posts' `legacyUrl` and emit `public/_redirects`:
-  ```
+
+  ```text
   /entry/2025/11/17/051856 /posts/2025-11-17-051856 301
   ```
+
 - Cloudflare Pages reads `_redirects` automatically.
 
 ### 7. RSS, sitemap, tags — Done
@@ -230,7 +233,7 @@ Each phase is independently shippable; the site stays deployable throughout.
 
 1. `npm run dev` — every route renders: `/`, `/about`, `/posts`, `/posts/<slug>` (sample 3), `/tags`, `/tags/<tag>` (sample 2), `/rss.xml`, plus the `/en/*` mirror.
 2. `npm run build && npm run preview` — clean build, no warnings.
-3. RSS validates at https://validator.w3.org/feed/.
+3. RSS validates at <https://validator.w3.org/feed/>.
 4. Spot-check 5 migrated posts: title, date, tags, body, images, internal links.
 5. On Cloudflare preview, `curl -I` 5 sampled old Hatena URLs → `301` to expected new paths.
 6. Lighthouse on `/posts/<slug>`: perf ≥95, a11y ≥95, best-practices ≥95, SEO ≥95.
