@@ -3,15 +3,12 @@ import Base from '../../layouts/Base.astro';
 import PostList from '../../components/PostList.astro';
 import {
   loadAllPosts,
-  filterByLang,
   sortByPubDateDesc,
-  homeUrl,
   type LocalizedPost,
 } from '../../lib/posts';
 
-const LANG = 'ja';
 const allPosts = await loadAllPosts();
-const sortedPosts = sortByPubDateDesc(filterByLang(allPosts, LANG));
+const sortedPosts = sortByPubDateDesc(allPosts);
 
 const postsByYear = new Map<number, LocalizedPost[]>();
 for (const post of sortedPosts) {
@@ -23,7 +20,7 @@ for (const post of sortedPosts) {
 
 const years = [...postsByYear.keys()].sort((a, b) => b - a);
 ---
-<Base title="posts" lang={LANG} langSwitchHref={homeUrl('en')}>
+<Base title="posts">
   <h1>posts</h1>
   {years.map((year) => (
     <section>

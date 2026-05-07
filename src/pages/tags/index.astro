@@ -1,25 +1,17 @@
 ---
 import Base from '../../layouts/Base.astro';
-import {
-  loadAllPosts,
-  filterByLang,
-  collectTags,
-  tagUrl,
-  homeUrl,
-} from '../../lib/posts';
+import { loadAllPosts, collectTags, tagUrl } from '../../lib/posts';
 
-const LANG = 'ja';
 const allPosts = await loadAllPosts();
-const langPosts = filterByLang(allPosts, LANG);
-const tagCounts = collectTags(langPosts);
+const tagCounts = collectTags(allPosts);
 const sortedTags = [...tagCounts.entries()].sort((a, b) => {
   if (b[1] !== a[1]) {
     return b[1] - a[1];
   }
-  return a[0].localeCompare(b[0], LANG);
+  return a[0].localeCompare(b[0]);
 });
 ---
-<Base title="tags" lang={LANG} langSwitchHref={homeUrl('en')}>
+<Base title="tags">
   <h1>tags</h1>
   {sortedTags.length === 0 ? (
     <p>No tags yet.</p>
@@ -27,7 +19,7 @@ const sortedTags = [...tagCounts.entries()].sort((a, b) => {
     <ul class="list-none p-0 flex flex-wrap gap-y-2 gap-x-4">
       {sortedTags.map(([tag, count]) => (
         <li>
-          <a class="no-underline text-muted hover:text-accent hover:underline" href={tagUrl(tag, LANG)}>#{tag}</a>
+          <a class="no-underline text-muted hover:text-accent hover:underline" href={tagUrl(tag)}>#{tag}</a>
           <span class="text-muted text-[0.85em] ml-1">({count})</span>
         </li>
       ))}

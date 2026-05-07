@@ -17,19 +17,19 @@ Migration is implemented top-down: shell first, then content import, then redire
 |---|---|
 | 1. Bootstrap | Done |
 | 2. Shell + theme | Done |
-| 3. Bilingual support | Done |
+| 3. Article translations | Done (shell EN-only; per-article EN translation slot at `/posts/<slug>/en`) |
 | 4. Hatena export → Markdown | Pending (lands in the migration-scripts PR) |
 | 5. Image migration | Pending (lands in the migration-scripts PR) |
 | 6. Redirects | Pending (lands in the content PR) |
 | 7. RSS, sitemap, tags | Done (RSS + sitemap; tag pages exist on the seed data) |
-| 8. Portfolio `/about` | Done (JA + EN) |
+| 8. Portfolio `/about` | Done (English) |
 | 9. Theme polish | Pending |
 | 10. Deploy | Pending |
 
 Notes:
 
 - Work is split across three stacked PRs to keep diffs reviewable: this **foundation** PR ships the Astro shell, bilingual routing, Tailwind theme, `/about`, and CI; a follow-up **migration-scripts** PR adds `scripts/import-hatena.ts` and friends; a final **content** PR imports the 68 JA posts, their images, and `public/_redirects`, and deletes the seed fixtures.
-- All migrated posts will be JA-only at first. The bilingual scaffolding is in place; per-post EN translations can be added incrementally.
+- The shell (home, about, listings, RSS, header/footer chrome) is English-only. Articles are written in Japanese; English versions are produced by machine translation and live alongside the JA original at `/posts/<slug>/en`. EN-only posts are also valid (they just have no `/posts/<slug>` URL).
 - Two extra utility scripts emerged during migration and are now part of the toolchain: `scripts/rename-slugs.ts` (rename date-based slugs to readable ones while preserving `legacyUrl`) and `scripts/rewrite-internal-links.ts` (rewrite intra-blog links from old Hatena paths to new `/posts/<slug>` paths).
 - Seed fixture posts (`hello_*`, `image-sample_ja`, `typography-and-code_ja`, `english-only-fixture_en`) live alongside the shell so every route renders. They are removed in the content PR once real content lands.
 
@@ -40,19 +40,20 @@ Notes:
 | Framework | Astro (static output, no SSR/adapter) |
 | Hosting | Cloudflare Pages, custom domain `blog.garaemon.com` |
 | Content authoring | Markdown via Astro Content Collections (type-safe frontmatter) |
-| Languages | Bilingual: Japanese (default) + English. Each post may exist in JA, EN, or both. |
-| File layout | Single flat collection per type; language is a filename suffix (`<slug>_ja.md` / `<slug>_en.md`) |
-| Post URLs | `/posts/<slug>` (JA) and `/en/posts/<slug>` (EN) |
-| Old URL handling | 301 redirects from `/entry/YYYY/MM/DD/HHMMSS` via `public/_redirects` |
+| Shell language | English only (chrome, listings, about). Authors write articles in JA; EN articles are machine-translated. |
+| Article languages | JA canonical, optional EN translation per slug. |
+| File layout | `src/content/posts/<slug>_<lang>.md` for posts; `src/content/pages/<slug>.md` (English) for pages. |
+| Post URLs | `/posts/<slug>` (JA canonical) and `/posts/<slug>/en` (EN translation). EN-only posts live at `/posts/<slug>/en` with no canonical bare path. |
+| Old URL handling | 301 redirects from `/entry/YYYY/MM/DD/HHMMSS` via `public/_redirects` (target is the JA canonical `/posts/<slug>`). |
 | Migration source | Hatena export (Movable Type format) → Markdown |
 | Images | Downloaded into the repo under `public/images/posts/<slug>/` |
-| Portfolio | Single `/about` Markdown page (bio, projects, links), bilingual via the `pages` collection |
+| Portfolio | Single English `/about` Markdown page (bio, projects, links). |
 | Comments | None |
 | Theme | Light only, system font (Verdana w/ CJK fallback), monochrome, bearblog-style CSS |
-| RSS | `@astrojs/rss`; one feed per language (`/rss.xml`, `/en/rss.xml`) |
+| RSS | `@astrojs/rss`; one feed at `/rss.xml` containing both JA and EN articles. |
 | Sitemap | `@astrojs/sitemap` |
-| Tags | `/tags/index` (cloud) + `/tags/<tag>`, mirrored under `/en/tags/...` |
-| Lang switcher | `JA / EN` in header. Per-content (post / about) link to the matching translation; aggregate listings (post index, tag pages) fall back to the other language's home rather than mirror. |
+| Tags | `/tags` (cloud) + `/tags/<tag>` (one tree shared by JA + EN articles). |
+| Translation linking | Per-article cross-link in the article header when the translation exists; no global JA/EN switcher. |
 
 Out of scope for v1: dark mode, on-site search, comments, syntax-theme switching beyond Shiki defaults.
 
@@ -72,27 +73,25 @@ site/
 │   ├── content/
 │   │   ├── config.ts           # Content Collections schema (posts, pages)
 │   │   ├── posts/<slug>_<lang>.md
-│   │   └── pages/<slug>_<lang>.md
+│   │   └── pages/<slug>.md     # English-only
 │   ├── pages/
-│   │   ├── index.astro         # JA home
+│   │   ├── index.astro         # English home
 │   │   ├── about.astro
-│   │   ├── posts/{index,[slug]}.astro
+│   │   ├── posts/index.astro
+│   │   ├── posts/[slug].astro          # JA canonical → /posts/<slug>
+│   │   ├── posts/[slug]/en.astro       # EN translation → /posts/<slug>/en
 │   │   ├── tags/{index,[tag]}.astro
-│   │   ├── rss.xml.ts
-│   │   └── en/                 # Mirror tree for English
-│   │       ├── index.astro
-│   │       ├── about.astro
-│   │       ├── posts/{index,[slug]}.astro
-│   │       ├── tags/{index,[tag]}.astro
-│   │       └── rss.xml.ts
+│   │   └── rss.xml.ts
 │   ├── layouts/
 │   │   ├── Base.astro
 │   │   └── Post.astro
 │   ├── components/
-│   │   ├── Header.astro        # Title + nav + JA/EN switcher
+│   │   ├── Header.astro        # Title + nav (no language switcher)
 │   │   ├── Footer.astro
 │   │   └── PostList.astro
-│   ├── lib/posts.ts            # Lang-aware helpers (parsePostId, postUrl, ...)
+│   ├── lib/
+│   │   ├── posts.ts            # Helpers (parsePostId, postUrl, ...)
+│   │   └── site.ts             # Site identity strings
 │   ├── styles/global.css
 │   └── utils/date.ts
 └── scripts/
@@ -151,12 +150,16 @@ Each phase is independently shippable; the site stays deployable throughout.
 
 **Stop here for theme sign-off before bulk content work.**
 
-### 3. Bilingual support — Done
+### 3. Article translations — Done
 
-- Add a `pages` collection mirroring posts.
-- Convert all content to `<slug>_<lang>.md` flat layout.
-- Mirror routes under `/en/*`. Add per-language RSS.
-- Add a JA/EN switcher in the header with the active language bolded. Per-content pages (`/about`, individual posts) link the inactive label to the matching translation when one exists; aggregate listings fall back to the other language's home.
+- Shell (home, about, listings, RSS, header/footer chrome) is **English only**. No `/en/*` mirror tree.
+- Articles are written in JA; EN translations are produced by machine translation and added incrementally per slug.
+- File layout: `src/content/posts/<slug>_<lang>.md`. Same slug pairs translations; either side may be missing.
+- URLs:
+  - `/posts/<slug>` — JA canonical
+  - `/posts/<slug>/en` — EN translation (or EN-only post)
+- Each article shows a "Read in English/Japanese →" link inline in the article header when the translation exists.
+- Single RSS feed at `/rss.xml` containing both JA and EN articles.
 
 ### 4. Hatena export → Markdown (`scripts/import-hatena.ts`) — Pending (migration-scripts PR)
 

@@ -4,7 +4,9 @@ Source for `blog.garaemon.com`: a static [Astro](https://astro.build/) site
 that hosts the blog (migrated from Hatena Blog) and a portfolio page,
 deployed to Cloudflare Pages.
 
-The migration plan and locked decisions live in
+Most posts are written in Japanese and migrated from Hatena Blog.
+English versions are produced by machine translation and live alongside
+the JA original. The full migration plan and locked decisions live in
 [`docs/MIGRATION.md`](docs/MIGRATION.md).
 
 ## Stack
@@ -34,24 +36,29 @@ site/
     ├── content/
     │   ├── config.ts             # Content Collections schema
     │   ├── posts/<slug>_<lang>.md
-    │   └── pages/<slug>_<lang>.md
+    │   └── pages/<slug>.md       # English-only
     ├── layouts/{Base,Post}.astro
-    ├── lib/posts.ts              # lang-aware helpers
-    ├── pages/                    # JA routes
+    ├── lib/{posts,site}.ts       # routing helpers + site identity
+    ├── pages/
     │   ├── {index,about}.astro
-    │   ├── posts/{index,[slug]}.astro
+    │   ├── posts/index.astro
+    │   ├── posts/[slug].astro          # JA canonical
+    │   ├── posts/[slug]/en.astro       # EN translation
     │   ├── tags/{index,[tag]}.astro
-    │   ├── rss.xml.ts
-    │   └── en/                   # mirrored EN routes
+    │   └── rss.xml.ts
     ├── styles/global.css
     └── utils/date.ts
 ```
 
 ## Conventions
 
-- **Bilingual content.** Each post or page is `<slug>_ja.md` or
-  `<slug>_en.md` under a single flat collection. Routes mirror the
-  language: JA at `/posts/<slug>`, EN at `/en/posts/<slug>`.
+- **Shell language.** The site chrome — header, footer, listings,
+  about page, RSS — is **English only**. Only individual articles
+  carry a language.
+- **Article translations.** A post may exist as `<slug>_ja.md`,
+  `<slug>_en.md`, or both. JA is canonical at `/posts/<slug>`; the
+  EN translation, when it exists, lives at `/posts/<slug>/en`.
+  EN-only posts have no bare `/posts/<slug>` URL.
 - **URLs.** `trailingSlash: 'never'`. Old Hatena URLs are preserved via
   301s in `public/_redirects`.
 - **Theme.** Light only, system font with CJK fallback, monochrome,

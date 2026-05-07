@@ -1,48 +1,22 @@
 ---
-// Site header: title link, primary nav, and JA/EN language switcher.
-// Pages render this through Base.astro and pass the current `lang` plus a
-// `langSwitchHref` (the URL the inactive language label should point to —
-// usually a translation, occasionally the other-language home).
-import {
-  type Lang,
-  LANGS,
-  homeUrl,
-  postsIndexUrl,
-  tagsIndexUrl,
-  aboutUrl,
-  rssUrl,
-} from '../lib/posts';
+// Site header: title link and primary nav. The shell is English-only,
+// so there is no language switcher; per-article pages handle their own
+// translation linking inside the article body.
 import { SITE_NAME } from '../lib/site';
 
-type Props = {
-  lang: Lang;
-  langSwitchHref: string;
-};
-
-const { lang, langSwitchHref } = Astro.props;
 const navItems = [
-  { href: homeUrl(lang), label: 'home' },
-  { href: postsIndexUrl(lang), label: 'posts' },
-  { href: tagsIndexUrl(lang), label: 'tags' },
-  { href: aboutUrl(lang), label: 'about' },
-  { href: rssUrl(lang), label: 'rss' },
+  { href: '/', label: 'home' },
+  { href: '/posts', label: 'posts' },
+  { href: '/tags', label: 'tags' },
+  { href: '/about', label: 'about' },
+  { href: '/rss.xml', label: 'rss' },
 ];
 ---
 <header class="flex flex-row flex-wrap justify-between items-baseline gap-4 pb-2">
-  <a class="font-bold text-[1.25em] no-underline text-heading" href={homeUrl(lang)}>{SITE_NAME}</a>
+  <a class="font-bold text-[1.25em] no-underline text-heading" href="/">{SITE_NAME}</a>
   <nav class="flex flex-row flex-wrap gap-4">
     {navItems.map((item) => (
       <a class="no-underline text-muted hover:underline hover:text-accent" href={item.href}>{item.label}</a>
     ))}
-    <span class="inline-flex items-baseline gap-1 font-mono text-[0.85em] ml-2">
-      {LANGS.map((candidate, index) => (
-        <>
-          {index > 0 && <span class="text-muted">/</span>}
-          {candidate === lang
-            ? <span class="font-bold text-accent">{candidate.toUpperCase()}</span>
-            : <a class="text-muted no-underline hover:text-accent hover:underline" href={langSwitchHref}>{candidate.toUpperCase()}</a>}
-        </>
-      ))}
-    </span>
   </nav>
 </header>

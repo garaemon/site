@@ -5,10 +5,6 @@ export type Lang = 'ja' | 'en';
 
 export const LANGS = ['ja', 'en'] as const satisfies readonly Lang[];
 
-// The default language has no URL prefix; the other language is served
-// under `/<lang>/...`. postUrl/tagUrl/etc. all branch on this constant.
-export const DEFAULT_LANG: Lang = 'ja';
-
 export type Post = CollectionEntry<'posts'>;
 
 export type LocalizedPost = {
@@ -50,8 +46,8 @@ export function isLang(value: string): value is Lang {
 
 /**
  * Load every published post (drafts excluded) and pair each entry with its
- * parsed `{ slug, lang }`. The returned array contains posts in both
- * languages; callers narrow with `filterByLang`.
+ * parsed `{ slug, lang }`. The same `slug` may appear in multiple languages;
+ * each `(slug, lang)` pair is its own URL.
  */
 export async function loadAllPosts(): Promise<LocalizedPost[]> {
   const entries = await getCollection('posts', ({ data }) => !data.draft);
@@ -59,11 +55,6 @@ export async function loadAllPosts(): Promise<LocalizedPost[]> {
     const { slug, lang } = parsePostId(entry.id);
     return { entry, slug, lang };
   });
-}
-
-/** Keep only the posts that match `lang`. */
-export function filterByLang(posts: LocalizedPost[], lang: Lang): LocalizedPost[] {
-  return posts.filter((post) => post.lang === lang);
 }
 
 /** Sort posts by `pubDate` newest-first, returning a fresh array. */
@@ -75,7 +66,7 @@ export function sortByPubDateDesc(posts: LocalizedPost[]): LocalizedPost[] {
 
 /**
  * Find the translation of `slug` in `targetLang`. Used by per-post pages to
- * decide whether the JA/EN switcher links to a matching post or falls back.
+ * show a "Read in <other lang>" link when the translation exists.
  */
 export function findTranslation(
   posts: LocalizedPost[],
@@ -85,65 +76,41 @@ export function findTranslation(
   return posts.find((post) => post.slug === slug && post.lang === targetLang);
 }
 
-/** URL of a post page in `lang`. */
-export function postUrl(slug: string, lang: Lang): string {
-  return lang === DEFAULT_LANG ? `/posts/${slug}` : `/${lang}/posts/${slug}`;
-}
-
-/**
- * URL of a tag page in `lang`. The tag is `encodeURIComponent`-ed so that
- * tags containing spaces, `#`, `/`, or non-ASCII characters do not break the
- * URL. Tag slugs themselves are not yet normalised; that lives on the
- * import-side roadmap.
- */
-export function tagUrl(tag: string, lang: Lang): string {
-  const encoded = encodeURIComponent(tag);
-  return lang === DEFAULT_LANG ? `/tags/${encoded}` : `/${lang}/tags/${encoded}`;
-}
-
-/** URL of the language home page. */
-export function homeUrl(lang: Lang): string {
-  return lang === DEFAULT_LANG ? '/' : `/${lang}`;
-}
-
-/** URL of the language about page. */
-export function aboutUrl(lang: Lang): string {
-  return lang === DEFAULT_LANG ? '/about' : `/${lang}/about`;
-}
-
-/** URL of the language tags index. */
-export function tagsIndexUrl(lang: Lang): string {
-  return lang === DEFAULT_LANG ? '/tags' : `/${lang}/tags`;
-}
-
-/** URL of the language posts index. */
-export function postsIndexUrl(lang: Lang): string {
-  return lang === DEFAULT_LANG ? '/posts' : `/${lang}/posts`;
-}
-
-/** URL of the language RSS feed. */
-export function rssUrl(lang: Lang): string {
-  return lang === DEFAULT_LANG ? '/rss.xml' : `/${lang}/rss.xml`;
-}
-
 /** Return the opposite of `lang` from the supported pair. */
 export function otherLang(lang: Lang): Lang {
   return lang === 'ja' ? 'en' : 'ja';
 }
 
+/**
+ * URL of a post page. JA is canonical at `/posts/<slug>` (the site is
+ * JA-first); EN translations live under the bare slug as
+ * `/posts/<slug>/en`. EN-only posts are served at `/posts/<slug>/en`
+ * with no canonical bare path.
+ */
+export function postUrl(slug: string, lang: Lang): string {
+  return lang === 'ja' ? `/posts/${slug}` : `/posts/${slug}/en`;
+}
+
+/**
+ * URL of a tag page. The tag is `encodeURIComponent`-ed so that tags
+ * containing spaces, `#`, `/`, or non-ASCII characters do not break the
+ * URL.
+ */
+export function tagUrl(tag: string): string {
+  return `/tags/${encodeURIComponent(tag)}`;
+}
+
 export type PageEntry = CollectionEntry<'pages'>;
 
 /**
- * Load a single page (e.g. `about`) in `lang`. Throws with a path hint when
- * the expected `<slug>_<lang>.md` file is missing so the build error points
- * at the file that needs to be created.
+ * Load a single page (e.g. `about`). Pages are English-only; the slug is
+ * the file basename. Throws with a path hint when the file is missing.
  */
-export async function loadPage(slug: string, lang: Lang): Promise<PageEntry> {
-  const id = `${slug}_${lang}`;
-  const entry = await getEntry('pages', id);
+export async function loadPage(slug: string): Promise<PageEntry> {
+  const entry = await getEntry('pages', slug);
   if (!entry) {
     throw new Error(
-      `page not found: ${id} (expected src/content/pages/${id}.md)`
+      `page not found: ${slug} (expected src/content/pages/${slug}.md)`
     );
   }
   return entry;

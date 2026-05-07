@@ -1,18 +1,20 @@
 ---
 import Base from './Base.astro';
 import { formatDate } from '../utils/date';
-import { type Lang, type Post, tagUrl } from '../lib/posts';
+import { type Lang, type Post, postUrl, tagUrl } from '../lib/posts';
 
 type Props = {
   post: Post;
   lang: Lang;
-  langSwitchHref: string;
+  translationSlug?: string;
+  translationLang?: Lang;
 };
 
-const { post, lang, langSwitchHref } = Astro.props;
+const { post, lang, translationSlug, translationLang } = Astro.props;
 const { title, description, pubDate, updatedDate, tags } = post.data;
+const langLabel = lang === 'ja' ? '日本語' : 'English';
 ---
-<Base title={title} description={description} lang={lang} langSwitchHref={langSwitchHref}>
+<Base title={title} description={description} lang={lang}>
   <article>
     <header>
       <h1 class="mb-[0.25em]">{title}</h1>
@@ -23,10 +25,16 @@ const { title, description, pubDate, updatedDate, tags } = post.data;
             {' '}&middot; updated <time datetime={updatedDate.toISOString()}>{formatDate(updatedDate)}</time>
           </>
         )}
+        <span class="ml-2 font-mono">[{langLabel}]</span>
+        {translationSlug && translationLang && (
+          <a class="ml-2 text-muted no-underline hover:text-accent hover:underline" href={postUrl(translationSlug, translationLang)}>
+            read in {translationLang === 'ja' ? '日本語' : 'English'} &rarr;
+          </a>
+        )}
         {tags.length > 0 && (
           <span class="ml-2">
             {tags.map((tag) => (
-              <a class="text-muted no-underline mr-2 hover:text-accent hover:underline" href={tagUrl(tag, lang)}>#{tag}</a>
+              <a class="text-muted no-underline mr-2 hover:text-accent hover:underline" href={tagUrl(tag)}>#{tag}</a>
             ))}
           </span>
         )}

@@ -1,12 +1,11 @@
 ---
 import Base from '../layouts/Base.astro';
-import { loadPage, aboutUrl } from '../lib/posts';
+import { loadPage } from '../lib/posts';
 
-const LANG = 'ja';
-const page = await loadPage('about', LANG);
+const page = await loadPage('about');
 const { Content } = await page.render();
 ---
-<Base title={page.data.title} description={page.data.description} lang={LANG} langSwitchHref={aboutUrl('en')}>
+<Base title={page.data.title} description={page.data.description}>
   <article>
     <h1>{page.data.title}</h1>
     <Content />
