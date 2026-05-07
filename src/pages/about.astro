@@ -1,0 +1,13 @@
+---
+import Base from '../layouts/Base.astro';
+import { loadPage } from '../lib/posts';
+
+const page = await loadPage('about');
+const { Content } = await page.render();
+---
+<Base title={page.data.title} description={page.data.description}>
+  <article>
+    <h1>{page.data.title}</h1>
+    <Content />
+  </article>
+</Base>

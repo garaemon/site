@@ -1,0 +1,22 @@
+---
+// Site header: title link and primary nav. The shell is English-only,
+// so there is no language switcher; per-article pages handle their own
+// translation linking inside the article body.
+import { SITE_NAME } from '../lib/site';
+
+const navItems = [
+  { href: '/', label: 'home' },
+  { href: '/posts', label: 'posts' },
+  { href: '/tags', label: 'tags' },
+  { href: '/about', label: 'about' },
+  { href: '/rss.xml', label: 'rss' },
+];
+---
+<header class="flex flex-row flex-wrap justify-between items-baseline gap-4 pb-2">
+  <a class="font-bold text-[1.25em] no-underline text-heading" href="/">{SITE_NAME}</a>
+  <nav class="flex flex-row flex-wrap gap-4">
+    {navItems.map((item) => (
+      <a class="no-underline text-muted hover:underline hover:text-accent" href={item.href}>{item.label}</a>
+    ))}
+  </nav>
+</header>

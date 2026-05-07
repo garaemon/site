@@ -1,0 +1,31 @@
+---
+import Base from '../../layouts/Base.astro';
+import PostList from '../../components/PostList.astro';
+import {
+  loadAllPosts,
+  sortByPubDateDesc,
+  type LocalizedPost,
+} from '../../lib/posts';
+
+const allPosts = await loadAllPosts();
+const sortedPosts = sortByPubDateDesc(allPosts);
+
+const postsByYear = new Map<number, LocalizedPost[]>();
+for (const post of sortedPosts) {
+  const year = post.entry.data.pubDate.getFullYear();
+  const bucket = postsByYear.get(year) ?? [];
+  bucket.push(post);
+  postsByYear.set(year, bucket);
+}
+
+const years = [...postsByYear.keys()].sort((a, b) => b - a);
+---
+<Base title="posts">
+  <h1>posts</h1>
+  {years.map((year) => (
+    <section>
+      <h2>{year}</h2>
+      <PostList posts={postsByYear.get(year)!} />
+    </section>
+  ))}
+</Base>

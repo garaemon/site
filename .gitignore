@@ -1,0 +1,23 @@
+node_modules/
+dist/
+.astro/
+.DS_Store
+.env
+.env.*
+!.env.example
+
+.claude/settings.local.json
+
+# Hatena Blog export source — kept locally only, not part of site source.
+blog.garaemon.com.export.txt
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+.playwright-mcp/
+*-before.png
+*-after.png
+before-*.png
+after-*.png

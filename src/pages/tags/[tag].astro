@@ -1,0 +1,32 @@
+---
+import Base from '../../layouts/Base.astro';
+import PostList from '../../components/PostList.astro';
+import {
+  loadAllPosts,
+  sortByPubDateDesc,
+  collectTags,
+  type LocalizedPost,
+} from '../../lib/posts';
+
+export async function getStaticPaths() {
+  const allPosts = await loadAllPosts();
+  return [...collectTags(allPosts).keys()].map((tag) => {
+    const taggedPosts = sortByPubDateDesc(
+      allPosts.filter((post) => post.entry.data.tags.includes(tag))
+    );
+    return {
+      params: { tag },
+      props: { tag, posts: taggedPosts },
+    };
+  });
+}
+
+type Props = { tag: string; posts: LocalizedPost[] };
+
+const { tag, posts } = Astro.props as Props;
+---
+<Base title={`#${tag}`}>
+  <h1>#{tag}</h1>
+  <p><a href="/tags">&larr; all tags</a></p>
+  <PostList posts={posts} />
+</Base>

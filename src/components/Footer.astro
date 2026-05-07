@@ -1,0 +1,14 @@
+---
+import { SITE_NAME } from '../lib/site';
+
+// 2010 is the year the original blog.garaemon.com began on Hatena.
+const startYear = 2010;
+const currentYear = new Date().getFullYear();
+const yearRange = startYear === currentYear ? `${startYear}` : `${startYear}-${currentYear}`;
+---
+<footer class="py-[25px] text-center text-muted text-[0.9em]">
+  <p>
+    &copy; {yearRange} {SITE_NAME} &middot;
+    <a href="/rss.xml">rss</a>
+  </p>
+</footer>

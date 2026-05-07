@@ -1,0 +1,22 @@
+---
+// Renders a flat list of posts as `<date> — <title>` rows. Used on the
+// home page (latest 10), the posts index (per-year groups), and tag
+// pages. Posts must already be sorted by the caller; this component does
+// not sort.
+import { formatDate } from '../utils/date';
+import { type LocalizedPost, postUrl } from '../lib/posts';
+
+type Props = {
+  posts: LocalizedPost[];
+};
+
+const { posts } = Astro.props;
+---
+<ul class="list-none p-0 mt-0 mx-0 mb-4">
+  {posts.map((post) => (
+    <li class="flex items-baseline gap-4 py-1">
+      <time class="shrink-0 grow-0 basis-24" datetime={post.entry.data.pubDate.toISOString()}>{formatDate(post.entry.data.pubDate)}</time>
+      <a class="no-underline hover:underline" href={postUrl(post.slug, post.lang)}>{post.entry.data.title}</a>
+    </li>
+  ))}
+</ul>

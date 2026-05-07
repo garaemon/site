@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Markdown lint
+        run: npm run lint:md
+
+      - name: Astro type check
+        run: npm run check
+
+      - name: Build
+        run: npm run build
+
+      # npm audit is informational: a new upstream advisory should warn,
+      # not turn main red retroactively. Surface results without failing CI.
+      - name: npm audit
+        run: npm audit --audit-level=high
+        continue-on-error: true
