@@ -10,10 +10,10 @@ import {
 } from '../../lib/posts';
 
 export async function getStaticPaths() {
-  const all = await loadAllPosts();
-  const jaPosts = filterByLang(all, 'ja');
+  const allPosts = await loadAllPosts();
+  const jaPosts = filterByLang(allPosts, 'ja');
   return jaPosts.map((post) => {
-    const translation = findTranslation(all, post.slug, 'en');
+    const translation = findTranslation(allPosts, post.slug, 'en');
     const langSwitchHref = translation ? postUrl(post.slug, 'en') : homeUrl('en');
     return {
       params: { slug: post.slug },

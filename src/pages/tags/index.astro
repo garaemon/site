@@ -9,8 +9,8 @@ import {
 } from '../../lib/posts';
 
 const LANG = 'ja';
-const all = await loadAllPosts();
-const langPosts = filterByLang(all, LANG);
+const allPosts = await loadAllPosts();
+const langPosts = filterByLang(allPosts, LANG);
 const tagCounts = collectTags(langPosts);
 const sortedTags = [...tagCounts.entries()].sort((a, b) => {
   if (b[1] !== a[1]) {
