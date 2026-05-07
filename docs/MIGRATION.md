@@ -18,8 +18,8 @@ Migration is implemented top-down: shell first, then content import, then redire
 | 1. Bootstrap | Done |
 | 2. Shell + theme | Done |
 | 3. Article translations | Done (shell EN-only; per-article EN translation slot at `/posts/<slug>/en`) |
-| 4. Hatena export → Markdown | Pending (lands in the migration-scripts PR) |
-| 5. Image migration | Pending (lands in the migration-scripts PR) |
+| 4. Hatena export → Markdown | Done (`scripts/import-hatena.ts` lives in this PR; the actual import runs in the content PR) |
+| 5. Image migration | Done (`scripts/download-images.ts` lives in this PR; the actual download runs in the content PR) |
 | 6. Redirects | Pending (lands in the content PR) |
 | 7. RSS, sitemap, tags | Done (RSS + sitemap; tag pages exist on the seed data) |
 | 8. Portfolio `/about` | Done (English) |
@@ -161,7 +161,7 @@ Each phase is independently shippable; the site stays deployable throughout.
 - Each article shows a "Read in English/Japanese →" link inline in the article header when the translation exists.
 - Single RSS feed at `/rss.xml` containing both JA and EN articles.
 
-### 4. Hatena export → Markdown (`scripts/import-hatena.ts`) — Pending (migration-scripts PR)
+### 4. Hatena export → Markdown (`scripts/import-hatena.ts`) — Done
 
 - Source: Hatena Blog 設定 → 詳細設定 → エクスポート (MT format `.txt`, kept locally outside git).
 - Parser reads MT records (`TITLE`, `BASENAME`, `DATE`, `CATEGORY`, `STATUS`, `BODY`).
@@ -178,7 +178,7 @@ Each phase is independently shippable; the site stays deployable throughout.
   - Otherwise preserve HTML; Markdown allows inline HTML so `<figure>`, `<iframe>`, etc. render.
 - Run as `node --experimental-strip-types scripts/import-hatena.ts`.
 
-### 5. Image migration (`scripts/download-images.ts`) — Pending (migration-scripts PR)
+### 5. Image migration (`scripts/download-images.ts`) — Done
 
 - Walk all `_ja.md` / `_en.md` posts; regex-match Hatena CDN hosts (`cdn-ak.f.st-hatena.com`, `cdn.image.st-hatena.com`, `f.hatena.ne.jp`).
 - Download each image to `public/images/posts/<slug>/<basename>` (preserve filename; dedupe by hash on collision).
