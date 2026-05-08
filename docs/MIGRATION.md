@@ -18,10 +18,10 @@ Migration is implemented top-down: shell first, then content import, then redire
 | 1. Bootstrap | Done |
 | 2. Shell + theme | Done |
 | 3. Article translations | Done (shell EN-only; per-article EN translation slot at `/posts/<slug>/en`) |
-| 4. Hatena export → Markdown | Done (`scripts/import-hatena.ts` lives in this PR; the actual import runs in the content PR) |
-| 5. Image migration | Done (`scripts/download-images.ts` lives in this PR; the actual download runs in the content PR) |
-| 6. Redirects | Pending (lands in the content PR) |
-| 7. RSS, sitemap, tags | Done (RSS + sitemap; tag pages exist on the seed data) |
+| 4. Hatena export → Markdown | Done (68 JA posts imported) |
+| 5. Image migration | Done |
+| 6. Redirects | Done (68 entries in `public/_redirects`) |
+| 7. RSS, sitemap, tags | Done |
 | 8. Portfolio `/about` | Done (English) |
 | 9. Theme polish | Pending |
 | 10. Deploy | Pending |
@@ -31,7 +31,7 @@ Notes:
 - Work is split across three stacked PRs to keep diffs reviewable: this **foundation** PR ships the Astro shell, bilingual routing, Tailwind theme, `/about`, and CI; a follow-up **migration-scripts** PR adds `scripts/import-hatena.ts` and friends; a final **content** PR imports the 68 JA posts, their images, and `public/_redirects`, and deletes the seed fixtures.
 - The shell (home, about, listings, RSS, header/footer chrome) is English-only. Articles are written in Japanese; English versions are produced by machine translation and live alongside the JA original at `/posts/<slug>/en`. EN-only posts are also valid (they just have no `/posts/<slug>` URL).
 - Two extra utility scripts emerged during migration and are now part of the toolchain: `scripts/rename-slugs.ts` (rename date-based slugs to readable ones while preserving `legacyUrl`) and `scripts/rewrite-internal-links.ts` (rewrite intra-blog links from old Hatena paths to new `/posts/<slug>` paths).
-- Seed fixture posts (`hello_*`, `image-sample_ja`, `typography-and-code_ja`, `english-only-fixture_en`) live alongside the shell so every route renders. They are removed in the content PR once real content lands.
+- Seed fixture posts (`hello_*`, `image-sample_ja`, `typography-and-code_ja`, `english-only-fixture_en`) were deleted once real content landed.
 
 ## Locked Decisions
 
@@ -185,7 +185,7 @@ Each phase is independently shippable; the site stays deployable throughout.
 - Rewrite Markdown `<img src>` references to `/images/posts/<slug>/<basename>`.
 - Idempotent: skip already-downloaded files.
 
-### 6. Redirects (`scripts/build-redirects.ts`) — Pending (content PR)
+### 6. Redirects (`scripts/build-redirects.ts`) — Done
 
 - Scan all posts' `legacyUrl` and emit `public/_redirects`:
 
