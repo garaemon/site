@@ -1,11 +1,16 @@
+const TOKYO_FORMATTER = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Asia/Tokyo',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
 /**
- * Format `date` as `YYYY-MM-DD` in the runtime's local timezone. Hatena
- * post dates are imported as Asia/Tokyo by `scripts/import-hatena.ts`, so
- * callers should pre-shift to JST when consistency across builds matters.
+ * Format `date` as `YYYY-MM-DD` in Asia/Tokyo. Hatena post dates are
+ * imported as JST by `scripts/import-hatena.ts`, and CI builds run in UTC,
+ * so we explicitly format in JST to keep the displayed date stable across
+ * the operator's local machine and the CI runner.
  */
 export function formatDate(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  return TOKYO_FORMATTER.format(date);
 }
