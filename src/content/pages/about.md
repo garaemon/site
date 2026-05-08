@@ -18,4 +18,4 @@ Emacs Lisp; perpetually tinkering with my Mac.
 ## Elsewhere
 
 - [GitHub](https://github.com/garaemon)
-- [RSS](/en/rss.xml)
+- [RSS](/rss.xml)
