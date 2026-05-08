@@ -3,10 +3,10 @@
 // from the legacy Hatena BASENAME-derived slug to a human-friendly slug
 // derived from the post title. Collisions are disambiguated with a numeric
 // suffix, and image references inside the markdown are updated in place.
-import { readFileSync, writeFileSync, readdirSync, renameSync, existsSync } from 'node:fs';
+import { readFile, writeFile, readdir, rename } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseSlugFromFilename } from './_shared.ts';
+import { parseSlugFromFilename, pathExists } from './lib/shared.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..');
@@ -24,12 +24,12 @@ type PostInfo = {
   pubDate: string;
 };
 
-function readPostInfo(filename: string): PostInfo | null {
+async function readPostInfo(filename: string): Promise<PostInfo | null> {
   const parsed = parseSlugFromFilename(filename);
   if (!parsed) {
     return null;
   }
-  const content = readFileSync(join(POSTS_DIR, filename), 'utf8');
+  const content = await readFile(join(POSTS_DIR, filename), 'utf8');
   // Title regex assumes the value never contains an escaped `\"`. The
   // importer's yamlString collapses newlines and only escapes `\` and `"`,
   // so titles with embedded quotes would truncate here -- keep this in sync
@@ -120,21 +120,21 @@ function planRenames(posts: PostInfo[]): Map<string, string> {
   return renamesBySlug;
 }
 
-function renameImageDir(oldSlug: string, newSlug: string): void {
+async function renameImageDir(oldSlug: string, newSlug: string): Promise<void> {
   const oldDir = join(IMAGES_ROOT, oldSlug);
   const newDir = join(IMAGES_ROOT, newSlug);
-  if (!existsSync(oldDir)) {
+  if (!(await pathExists(oldDir))) {
     return;
   }
   // The destination already exists when both _ja.md and _en.md share a slug
   // (the second pass is a no-op). It can also exist if a prior partial run
   // left state behind, in which case stale files may linger in oldDir; log so
   // a manual cleanup path is discoverable.
-  if (existsSync(newDir)) {
+  if (await pathExists(newDir)) {
     console.log(`image dir rename skipped (destination exists): ${oldSlug} -> ${newSlug}`);
     return;
   }
-  renameSync(oldDir, newDir);
+  await rename(oldDir, newDir);
 }
 
 // `/images/posts/<slug>/` is unique enough as a path prefix that we can
@@ -151,7 +151,7 @@ function rewriteImagePaths(content: string, oldSlug: string, newSlug: string): s
   return content.replace(new RegExp(escaped, 'g'), newPath);
 }
 
-function applyRenames(posts: PostInfo[], renamesBySlug: Map<string, string>): number {
+async function applyRenames(posts: PostInfo[], renamesBySlug: Map<string, string>): Promise<number> {
   let renamedFiles = 0;
   for (const post of posts) {
     const newSlug = renamesBySlug.get(post.slug);
@@ -164,11 +164,11 @@ function applyRenames(posts: PostInfo[], renamesBySlug: Map<string, string>): nu
     // interrupted run or a manual edit could have left a file at newPath.
     // Skip with a warning so we never silently clobber existing work --
     // mirrors the symmetric guard in renameImageDir.
-    if (existsSync(newPath)) {
+    if (await pathExists(newPath)) {
       console.warn(`post rename skipped (destination exists): ${post.filename} -> ${newSlug}_${post.lang}.md`);
       continue;
     }
-    const content = readFileSync(oldPath, 'utf8');
+    const content = await readFile(oldPath, 'utf8');
     const updated = rewriteImagePaths(content, post.slug, newSlug);
     // Rename first, then write the rewritten body to the new path. If a step
     // fails partway through, the file is either still under its old name with
@@ -177,27 +177,30 @@ function applyRenames(posts: PostInfo[], renamesBySlug: Map<string, string>): nu
     // but not rewritten" recovery path is intentionally not automated: a
     // re-run rebuilds the slug map from current filenames and would not
     // retry, so manual `git diff` before commit is the recovery surface.
-    renameSync(oldPath, newPath);
-    writeFileSync(newPath, updated);
-    renameImageDir(post.slug, newSlug);
+    await rename(oldPath, newPath);
+    await writeFile(newPath, updated);
+    await renameImageDir(post.slug, newSlug);
     console.log(`${post.slug} -> ${newSlug}`);
     renamedFiles++;
   }
   return renamedFiles;
 }
 
-function main(): void {
-  const filenames = readdirSync(POSTS_DIR).filter((filename) => filename.endsWith('.md'));
+async function main(): Promise<void> {
+  const filenames = (await readdir(POSTS_DIR)).filter((filename) => filename.endsWith('.md'));
   const posts: PostInfo[] = [];
   for (const filename of filenames) {
-    const info = readPostInfo(filename);
+    const info = await readPostInfo(filename);
     if (info) {
       posts.push(info);
     }
   }
   const renames = planRenames(posts);
-  const renamedFiles = applyRenames(posts, renames);
+  const renamedFiles = await applyRenames(posts, renames);
   console.log(`renamed ${renamedFiles} files`);
 }
 
-main();
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

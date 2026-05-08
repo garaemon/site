@@ -3,9 +3,10 @@
 // and writes one Astro content file per published entry into
 // src/content/posts/<slug>_ja.md, including frontmatter (title, pubDate,
 // description, tags, legacyUrl) and a lightly cleaned-up HTML body.
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { pathExists } from './lib/shared.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..');
@@ -162,7 +163,7 @@ function deriveDescription(body: string): string | undefined {
 function yamlString(value: string): string {
   // Collapse newlines and tabs to single spaces so a stray line break in a
   // title or category does not produce a multi-line YAML scalar that the
-  // simple regex-based readers in _shared.ts would mis-parse.
+  // simple regex-based readers in lib/shared.ts would mis-parse.
   const flattened = value.replace(/[\r\n\t]+/g, ' ');
   return `"${flattened.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 }
@@ -234,9 +235,12 @@ function buildEntryFile(entry: Entry): { path: string; content: string } | { ski
   };
 }
 
-function main(): void {
-  const text = readFileSync(EXPORT_FILE, 'utf8');
+async function main(): Promise<void> {
+  const text = await readFile(EXPORT_FILE, 'utf8');
   const entries = parseExport(text);
+  // mkdir with recursive:true is idempotent, so we can ensure POSTS_DIR up
+  // front and then skip the per-entry directory check.
+  await mkdir(POSTS_DIR, { recursive: true });
   let written = 0;
   let overwritten = 0;
   let skippedExisting = 0;
@@ -261,24 +265,22 @@ function main(): void {
       }
       continue;
     }
-    if (!existsSync(dirname(result.path))) {
-      mkdirSync(dirname(result.path), { recursive: true });
-    }
+    const exists = await pathExists(result.path);
     // Re-running the importer overwrites previously imported posts. That is
     // intentional for re-exports, but it would also clobber manual edits, so
     // honour HATENA_IMPORT_SKIP_EXISTING when the operator wants to preserve
     // local changes.
-    if (process.env.HATENA_IMPORT_SKIP_EXISTING === '1' && existsSync(result.path)) {
+    if (process.env.HATENA_IMPORT_SKIP_EXISTING === '1' && exists) {
       skippedExisting++;
       continue;
     }
     if (writtenPaths.has(result.path)) {
       console.warn(`duplicate output path within this run: ${result.path}`);
     }
-    if (existsSync(result.path)) {
+    if (exists) {
       overwritten++;
     }
-    writeFileSync(result.path, result.content);
+    await writeFile(result.path, result.content);
     writtenPaths.add(result.path);
     written++;
   }
@@ -293,4 +295,7 @@ function main(): void {
   );
 }
 
-main();
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

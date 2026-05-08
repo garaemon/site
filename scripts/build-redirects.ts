@@ -1,10 +1,10 @@
 #!/usr/bin/env -S node --experimental-strip-types
 // Generates public/_redirects from each post's legacyUrl frontmatter so that
 // the original Hatena Blog paths return 301 redirects to /posts/<slug>.
-import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
+import { readFile, writeFile, readdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { extractLegacyUrl, parseSlugFromFilename } from './_shared.ts';
+import { extractLegacyUrl, parseSlugFromFilename } from './lib/shared.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..');
@@ -13,16 +13,17 @@ const REDIRECTS_FILE = join(ROOT, 'public/_redirects');
 
 type RedirectRule = { from: string; to: string };
 
-function buildRules(): RedirectRule[] {
+async function buildRules(): Promise<RedirectRule[]> {
   const rules: RedirectRule[] = [];
-  for (const filename of readdirSync(POSTS_DIR)) {
+  const filenames = await readdir(POSTS_DIR);
+  for (const filename of filenames) {
     const parsed = parseSlugFromFilename(filename);
     // Only Japanese posts carry legacyUrl, so non-JA files contribute nothing
     // to the redirect map.
     if (!parsed || parsed.lang !== 'ja') {
       continue;
     }
-    const content = readFileSync(join(POSTS_DIR, filename), 'utf8');
+    const content = await readFile(join(POSTS_DIR, filename), 'utf8');
     const legacy = extractLegacyUrl(content);
     if (!legacy) {
       continue;
@@ -38,10 +39,13 @@ function renderRedirects(rules: RedirectRule[]): string {
   return lines.join('\n') + '\n';
 }
 
-function main(): void {
-  const rules = buildRules();
-  writeFileSync(REDIRECTS_FILE, renderRedirects(rules));
+async function main(): Promise<void> {
+  const rules = await buildRules();
+  await writeFile(REDIRECTS_FILE, renderRedirects(rules));
   console.log(`wrote ${rules.length} redirect rules to ${REDIRECTS_FILE}`);
 }
 
-main();
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

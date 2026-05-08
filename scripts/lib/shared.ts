@@ -1,7 +1,20 @@
 // Shared helpers for the Hatena migration scripts. Pulled out so the same
 // regexes do not drift across files.
+import { access } from 'node:fs/promises';
 
 const POST_FILENAME_PATTERN = /^(.+)_([a-z]{2})\.md$/;
+
+// Async equivalent of existsSync built on fs.promises.access. We use
+// try/catch on access rather than stat because we only need a boolean and
+// access is cheaper for that.
+export async function pathExists(path: string): Promise<boolean> {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 /**
  * A post filename split into its slug and ISO 639-1 language tag. The site

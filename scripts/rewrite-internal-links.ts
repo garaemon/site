@@ -3,10 +3,10 @@
 // point at blog.garaemon.com or garaemon.hatenadiary.{jp,com}/entry/... are
 // remapped to local /posts/<slug> paths using each post's legacyUrl, and the
 // bare blog homepage is rewritten to /.
-import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
+import { readFile, writeFile, readdir } from 'node:fs/promises';
 import { dirname, join, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { extractLegacyUrl, parseSlugFromFilename } from './_shared.ts';
+import { extractLegacyUrl, parseSlugFromFilename } from './lib/shared.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..');
@@ -18,14 +18,15 @@ type SlugMap = Map<string, string>;
 // `/entry/YYYY/MM/DD/HHMMSS`. The map below keys off the
 // `YYYY/MM/DD/HHMMSS` portion so the regex pattern in rewriteContent can
 // look it up directly.
-function buildLegacyToSlugMap(): SlugMap {
+async function buildLegacyToSlugMap(): Promise<SlugMap> {
   const map: SlugMap = new Map();
-  for (const filename of readdirSync(POSTS_DIR)) {
+  const filenames = await readdir(POSTS_DIR);
+  for (const filename of filenames) {
     const parsed = parseSlugFromFilename(filename);
     if (!parsed || parsed.lang !== 'ja') {
       continue;
     }
-    const content = readFileSync(join(POSTS_DIR, filename), 'utf8');
+    const content = await readFile(join(POSTS_DIR, filename), 'utf8');
     const legacy = extractLegacyUrl(content);
     if (!legacy) {
       continue;
@@ -71,19 +72,20 @@ function rewriteContent(content: string, slugMap: SlugMap): { updated: string; r
   return { updated, rewriteCount };
 }
 
-function main(): void {
-  const slugMap = buildLegacyToSlugMap();
+async function main(): Promise<void> {
+  const slugMap = await buildLegacyToSlugMap();
   let totalRewrites = 0;
   let touchedPosts = 0;
-  for (const filename of readdirSync(POSTS_DIR)) {
+  const filenames = await readdir(POSTS_DIR);
+  for (const filename of filenames) {
     if (!filename.endsWith('.md')) {
       continue;
     }
     const filePath = join(POSTS_DIR, filename);
-    const original = readFileSync(filePath, 'utf8');
+    const original = await readFile(filePath, 'utf8');
     const { updated, rewriteCount } = rewriteContent(original, slugMap);
     if (rewriteCount > 0 && updated !== original) {
-      writeFileSync(filePath, updated);
+      await writeFile(filePath, updated);
       console.log(`${basename(filename)}: ${rewriteCount} link(s) rewritten`);
       touchedPosts++;
       totalRewrites += rewriteCount;
@@ -92,4 +94,7 @@ function main(): void {
   console.log(`done: ${totalRewrites} links across ${touchedPosts} posts`);
 }
 
-main();
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

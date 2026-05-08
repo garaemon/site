@@ -3,10 +3,10 @@
 // downloads each image into public/images/posts/<slug>/, and rewrites the
 // markdown to reference the locally hosted copy. Idempotent: already-fetched
 // files are skipped.
-import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from 'node:fs';
+import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
 import { dirname, join, basename, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { requireSlugFromFilename } from './_shared.ts';
+import { pathExists, requireSlugFromFilename } from './lib/shared.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..');
@@ -17,8 +17,9 @@ const HATENA_HOST_PATTERN = /^https?:\/\/(?:cdn-ak\.f\.st-hatena\.com|cdn\.image
 const FETCH_TIMEOUT_MS = 30_000;
 const FETCH_USER_AGENT = 'blog-migration (garaemon/site)';
 
-function listPostFiles(): string[] {
-  return readdirSync(POSTS_DIR)
+async function listPostFiles(): Promise<string[]> {
+  const filenames = await readdir(POSTS_DIR);
+  return filenames
     .filter((name) => name.endsWith('.md'))
     .map((name) => join(POSTS_DIR, name));
 }
@@ -55,7 +56,7 @@ function localPathFor(slug: string, url: string): { dir: string; absolute: strin
 }
 
 async function downloadOnce(url: string, target: string): Promise<boolean> {
-  if (existsSync(target)) {
+  if (await pathExists(target)) {
     return false;
   }
   const response = await fetch(url, {
@@ -69,8 +70,8 @@ async function downloadOnce(url: string, target: string): Promise<boolean> {
   // downloads if this script is ever pointed at a less-trusted source.
   // The current corpus is filtered to the Hatena CDN, so this is acceptable.
   const arrayBuffer = await response.arrayBuffer();
-  mkdirSync(dirname(target), { recursive: true });
-  writeFileSync(target, Buffer.from(arrayBuffer));
+  await mkdir(dirname(target), { recursive: true });
+  await writeFile(target, Buffer.from(arrayBuffer));
   return true;
 }
 
@@ -86,7 +87,7 @@ function rewriteAttributeUrls(content: string, oldUrl: string, newUrl: string): 
 
 async function processPost(filePath: string): Promise<{ downloaded: number; rewritten: number; failed: number }> {
   const { slug } = requireSlugFromFilename(basename(filePath));
-  const original = readFileSync(filePath, 'utf8');
+  const original = await readFile(filePath, 'utf8');
   const urls = findImageUrls(original);
   if (urls.length === 0) {
     return { downloaded: 0, rewritten: 0, failed: 0 };
@@ -119,14 +120,14 @@ async function processPost(filePath: string): Promise<{ downloaded: number; rewr
     original
   );
   if (updated !== original) {
-    writeFileSync(filePath, updated);
+    await writeFile(filePath, updated);
     rewritten = successfulRewrites.length;
   }
   return { downloaded, rewritten, failed };
 }
 
 async function main(): Promise<void> {
-  const files = listPostFiles();
+  const files = await listPostFiles();
   let totalDownloaded = 0;
   let totalFailed = 0;
   let postsTouched = 0;
