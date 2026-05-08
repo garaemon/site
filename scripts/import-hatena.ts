@@ -26,6 +26,11 @@ type Entry = {
   body: string;
 };
 
+/**
+ * Parse a full Movable Type export. The input contains one or more entries
+ * separated by a line of exactly eight dashes (`--------`). Empty blocks --
+ * for example trailing whitespace -- are tolerated and skipped.
+ */
 function parseExport(text: string): Entry[] {
   const blocks = text.split(/\r?\n--------\r?\n/);
   const entries: Entry[] = [];
@@ -42,6 +47,14 @@ function parseExport(text: string): Entry[] {
   return entries;
 }
 
+/**
+ * Parse a single entry block. The block is a header section followed by one
+ * or more body sections separated by `-----`. The header is a sequence of
+ * `KEY: VALUE` lines (TITLE, BASENAME, STATUS, DATE, plus zero-or-more
+ * CATEGORY values); each body section begins with a tag line such as
+ * `BODY:`, `EXTENDED BODY:`, or `COMMENT:` followed by the section's
+ * content. Returns null when the block lacks the header/body separator.
+ */
 function parseEntry(block: string): Entry | null {
   const sections = block.split(/\r?\n-----\r?\n/);
   if (sections.length < 2) {
@@ -68,6 +81,13 @@ function parseEntry(block: string): Entry | null {
   return { header, body: bodySection.trim() };
 }
 
+/**
+ * Pick the `BODY:` section out of an entry's body-section list. Each input
+ * section starts with a tag line (`BODY:`, `EXTENDED BODY:`, `COMMENT:`,
+ * etc.) followed by the section's content. Returns the empty string when
+ * no BODY section is present so the caller can skip the entry rather than
+ * mistaking another section's content for the post body.
+ */
 function pickBody(sections: string[]): string {
   for (const section of sections) {
     const match = section.match(/^BODY:\r?\n([\s\S]*)$/);
@@ -75,12 +95,14 @@ function pickBody(sections: string[]): string {
       return match[1];
     }
   }
-  // No BODY section means this is e.g. a comments-only block; refuse to
-  // silently fall back to sections[0] (which would be a COMMENT body) and
-  // let the caller skip the entry instead.
   return '';
 }
 
+/**
+ * Parse a `DATE` value from a Hatena MT export. The expected shape is
+ * `MM/DD/YYYY HH:MM:SS` (Hatena writes timestamps in JST), and the result is
+ * the corresponding instant interpreted as Asia/Tokyo.
+ */
 function parseHatenaDate(input: string): Date {
   const match = input.match(/^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2}):(\d{2})$/);
   if (!match) {
@@ -105,10 +127,25 @@ function decodeEntities(html: string): string {
     .replace(/&nbsp;/g, ' ');
 }
 
+/**
+ * Remove Hatena's auto-linked keyword anchors. The expected input is HTML
+ * containing zero-or-more `<a class="keyword" href="...">text</a>` tags
+ * (Hatena Blog wraps any term that matches its keyword dictionary). The
+ * surrounding `<a>` is dropped and the inner text is kept verbatim.
+ */
 function stripHatenaKeywordLinks(html: string): string {
   return html.replace(/<a\s+class="keyword"[^>]*>([\s\S]*?)<\/a>/g, '$1');
 }
 
+/**
+ * Convert Hatena's syntax-highlighted code blocks to fenced markdown. The
+ * expected input is HTML containing
+ * `<pre class="code lang-LANG" ...>... <span class="syn*">tok</span> ...</pre>`
+ * blocks, where LANG is the language tag (e.g. `ts`, `c++`, `objective-c`)
+ * and the inner `<span class="syn*">` wrappers are highlight tokens. The
+ * spans are unwrapped, entities are decoded, and the result is emitted as a
+ * triple-backtick code fence with the original LANG.
+ */
 function convertHighlightedPre(html: string): string {
   return html.replace(
     /<pre[^>]*class="code\s+lang-([\w+#-]+)"[^>]*>([\s\S]*?)<\/pre>/g,
@@ -120,6 +157,13 @@ function convertHighlightedPre(html: string): string {
   );
 }
 
+/**
+ * Convert plain Hatena code blocks to fenced markdown. The expected input
+ * is HTML containing `<pre><code class="LANG">…</code></pre>` blocks that
+ * Hatena emits when no syntax-highlight markup is requested. Entities are
+ * decoded and the result is emitted as a triple-backtick code fence with
+ * the original LANG.
+ */
 function convertCodeBlocks(html: string): string {
   return html.replace(
     /<pre><code\s+class="([\w+#-]+)">([\s\S]*?)<\/code><\/pre>/g,
