@@ -11,7 +11,7 @@
 
 Migration is implemented top-down: shell first, then content import, then redirects/RSS/polish.
 
-## Status (2026-05-06)
+## Status (2026-05-10)
 
 | Phase | Status |
 |---|---|
@@ -24,7 +24,7 @@ Migration is implemented top-down: shell first, then content import, then redire
 | 7. RSS, sitemap, tags | Done |
 | 8. Portfolio `/about` | Done (English) |
 | 9. Theme polish | Pending |
-| 10. Deploy | Pending |
+| 10. Deploy | Done |
 
 Notes:
 
@@ -211,7 +211,7 @@ Each phase is independently shippable; the site stays deployable throughout.
 - Pass once over CSS for typography rhythm, code block padding, list spacing.
 - Confirm Lighthouse perf ≥95, a11y ≥95 on a post page.
 
-### 10. Deploy — Pending
+### 10. Deploy — Done
 
 - Push to GitHub.
 - Connect repo to Cloudflare Pages: build `npm run build`, output `dist`.
