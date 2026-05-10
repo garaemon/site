@@ -5,6 +5,6 @@
 export const SITE_NAME = 'garaemon';
 
 export const SITE_DESCRIPTION =
-  'A machine that consumes pop culture and outputs code.';
+  'A blog site of garaemon about pop culture and software.';
 
 export const RSS_TITLE = SITE_NAME;

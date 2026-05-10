@@ -21,8 +21,8 @@ for (const post of sortedPosts) {
 
 const yearGroups = [...postsByYear.entries()].sort(([a], [b]) => b - a);
 ---
-<Base title="posts">
-  <h1>posts</h1>
+<Base title="Posts">
+  <h1>Posts</h1>
   {yearGroups.map(([year, posts]) => (
     <section>
       <h2>{year}</h2>

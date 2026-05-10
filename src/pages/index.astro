@@ -9,18 +9,17 @@ const allPosts = await loadAllPosts();
 const recentPosts = sortByPubDateDesc(allPosts).slice(0, HOME_POST_LIMIT);
 ---
 <Base>
-  <section class="overflow-hidden">
+  <section class="flex items-center gap-4">
     <img
       src="https://github.com/garaemon.png"
       alt="garaemon"
       width="96"
       height="96"
       loading="eager"
-      class="rounded-full w-24 h-24 float-left mr-4 mb-2"
+      class="rounded-full w-24 h-24 shrink-0 m-0!"
     />
-    <p>
-      A machine that consumes pop culture and outputs code.
-      Notes on Emacs, macOS, Go, and whatever else I'm hacking on.
+    <p class="m-0!">
+      I love pop culture and writing codes.
       See <a href="/about">about</a> for a longer intro.
     </p>
   </section>
