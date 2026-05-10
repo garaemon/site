@@ -14,6 +14,9 @@ export async function GET(context: APIContext) {
     title: RSS_TITLE,
     description: SITE_DESCRIPTION,
     site: context.site,
+    // Cloudflare Pages is configured with `html_handling: "drop-trailing-slash"`,
+    // so emit canonical no-slash URLs here to avoid a 307 hop on every RSS click.
+    trailingSlash: false,
     items: sortedPosts.map((post) => ({
       title: post.entry.data.title,
       pubDate: post.entry.data.pubDate,
