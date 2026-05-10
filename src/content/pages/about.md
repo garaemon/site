@@ -1,15 +1,24 @@
 ---
-title: about
+title: About
 description: About garaemon.
 ---
 
-garaemon. Software engineer based in Tokyo. Mostly Go, TypeScript, and
-Emacs Lisp; perpetually tinkering with my Mac.
+garaemon. I am a software engineer based in Los Angeles.
+
+## Interests
+- Pop Culture
+  - Music
+  - Movies
+  - NBA
+- Software Engineering
+- Robotics
+
+## Experience and Education
+Please refer to my [LinkedIn](https://www.linkedin.com/in/garaemon/) page.
 
 ## Now
 
-- Working on TODO.
-- Reading TODO.
+- VP of Software at [GITAI](https://gitai.tech/)
 
 ## Projects
 
@@ -18,4 +27,7 @@ Emacs Lisp; perpetually tinkering with my Mac.
 ## Elsewhere
 
 - [GitHub](https://github.com/garaemon)
-- [RSS](/rss.xml)
+- [RSS of this blog](/rss.xml)
+- [X](https://x.com/garaemon)
+- [Bluesky](https://bsky.app/profile/garaemon.bsky.social)
+- [LinkedIn](https://www.linkedin.com/in/garaemon/)
