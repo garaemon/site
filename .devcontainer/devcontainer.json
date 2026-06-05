@@ -1,9 +1,6 @@
 {
   "name": "garaemon-site",
-  "image": "mcr.microsoft.com/devcontainers/typescript-node:22-bookworm",
-  "features": {
-    "ghcr.io/devcontainers/features/github-cli:1": {}
-  },
+  "image": "node:22",
   "forwardPorts": [4321],
   "portsAttributes": {
     "4321": {
@@ -12,29 +9,5 @@
     }
   },
   "postCreateCommand": "npm ci",
-  "customizations": {
-    "vscode": {
-      "extensions": [
-        "astro-build.astro-vscode",
-        "dbaeumer.vscode-eslint",
-        "bradlc.vscode-tailwindcss",
-        "DavidAnson.vscode-markdownlint",
-        "unifiedjs.vscode-mdx"
-      ],
-      "settings": {
-        "eslint.validate": [
-          "javascript",
-          "javascriptreact",
-          "typescript",
-          "typescriptreact",
-          "astro"
-        ],
-        "[astro]": {
-          "editor.defaultFormatter": "astro-build.astro-vscode"
-        },
-        "files.eol": "\n"
-      }
-    }
-  },
   "remoteUser": "node"
 }
