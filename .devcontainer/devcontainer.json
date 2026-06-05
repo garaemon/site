@@ -1,0 +1,13 @@
+{
+  "name": "garaemon-site",
+  "image": "node:22",
+  "forwardPorts": [4321],
+  "portsAttributes": {
+    "4321": {
+      "label": "Astro dev server",
+      "onAutoForward": "notify"
+    }
+  },
+  "postCreateCommand": "npm ci",
+  "remoteUser": "node"
+}
